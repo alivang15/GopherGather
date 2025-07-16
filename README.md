@@ -1,1 +1,1 @@
-# umn-events
+# Gopher Gatherings

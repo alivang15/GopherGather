@@ -1,7 +1,7 @@
 // filepath: /packages/webapp/src/app/auth/sign-in/page.tsx
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,13 +13,26 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false); // ✅ Add remember me state
+  const [rememberMe, setRememberMe] = useState(false);
   
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth(); // ✅ Add user to check auth status
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/';
   const successMessage = searchParams.get('message');
+  
+  // ✅ Check for vibe check context
+  const isVibeCheckFlow = searchParams.get('vibe_check') === 'true';
+  const eventId = searchParams.get('event_id');
+
+  // ✅ Handle automatic redirect for vibe check flow
+  useEffect(() => {
+    if (user && isVibeCheckFlow && redirectTo !== '/') {
+      // User is now authenticated and came from vibe check modal
+      console.log('🎯 Redirecting back to event with vibe check context');
+      router.push(`${redirectTo}?open_vibe_check=true&event_id=${eventId}`);
+    }
+  }, [user, isVibeCheckFlow, redirectTo, eventId, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,9 +40,16 @@ export default function SignInPage() {
     setError('');
 
     try {
-      // ✅ Pass remember me preference to signIn
       await signIn(email, password, rememberMe);
-      router.push(redirectTo);
+      
+      if (isVibeCheckFlow && redirectTo !== '/') {
+        // ✅ For vibe check flow, redirect with special parameters
+        router.push(`${redirectTo}?open_vibe_check=true&event_id=${eventId}`);
+      } else {
+        // ✅ Normal redirect flow
+        router.push(redirectTo);
+      }
+      
       router.refresh();
     } catch (err: any) {
       console.error('Sign in error:', err);
@@ -53,24 +73,49 @@ export default function SignInPage() {
             priority
           />
         </Link>
-        
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Sign in to your account
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Or{' '}
-          <Link
-            href="/auth/sign-up"
-            className="font-medium text-[#7a0019] hover:text-red-800 underline"
-          >
-            create a new account
-          </Link>
-        </p>
+        
+        {/* ✅ Show context-specific message for vibe check flow */}
+        {isVibeCheckFlow ? (
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Sign in to share your vibe check for this event
+          </p>
+        ) : (
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Or{' '}
+            <Link
+              href="/auth/sign-up"
+              className="font-medium text-[#7a0019] hover:text-red-800 underline"
+            >
+              create a new account
+            </Link>
+          </p>
+        )}
       </div>
 
       {/* Form */}
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-gray-200">
+          
+          {/* ✅ Show vibe check context banner */}
+          {isVibeCheckFlow && (
+            <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="flex items-center">
+                <span className="text-2xl mr-3">✨</span>
+                <div>
+                  <h3 className="text-sm font-medium text-purple-800">
+                    Vibe Check Authentication
+                  </h3>
+                  <p className="text-xs text-purple-600 mt-1">
+                    After signing in, you'll return to the event to share your vibe check
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <form className="space-y-6" onSubmit={handleSubmit}>
             
             {/* Success Message from Password Reset */}
@@ -214,6 +259,8 @@ export default function SignInPage() {
                   </svg>
                   Signing in...
                 </>
+              ) : isVibeCheckFlow ? (
+                'Sign In & Continue to Vibe Check'
               ) : (
                 'Sign in'
               )}

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import VibeCheckModal from '@/components/VibeCheckModal'; // Import the component
 
 interface Event {
@@ -48,6 +48,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [vibeCheckOpen, setVibeCheckOpen] = useState(false); // Add state for modal
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     async function fetchEvent() {
@@ -75,6 +76,20 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
     fetchEvent();
   }, [id]);
+
+  useEffect(() => {
+    const shouldOpenVibeCheck = searchParams.get('open_vibe_check') === 'true';
+    const eventIdFromUrl = searchParams.get('event_id');
+    
+    if (shouldOpenVibeCheck && eventIdFromUrl === id) {
+      console.log('🎯 Auto-opening vibe check modal after authentication');
+      setVibeCheckOpen(true);
+      
+      // ✅ Clean up URL parameters
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [searchParams, id]);
 
   const handleShare = async () => {
     try {

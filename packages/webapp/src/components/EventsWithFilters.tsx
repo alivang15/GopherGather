@@ -31,12 +31,12 @@ export default function EventsWithFilters({ allEvents }: EventsWithFiltersProps)
   
   // Initialize with URL params or default to 'All Events'
   const [selectedCategory, setSelectedCategory] = useState(() => {
-    return searchParams.get('category') || 'All Events';
+    return searchParams?.get('category') || 'All Events';
   });
 
   // Update URL when category changes
   useEffect(() => {
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams?.toString() || '');
     if (selectedCategory === 'All Events') {
       params.delete('category');
     } else {

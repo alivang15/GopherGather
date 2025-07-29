@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function SignInPage() {
   const [email, setEmail] = useState('');
@@ -18,12 +19,12 @@ export default function SignInPage() {
   const { signIn, user } = useAuth(); // ✅ Add user to check auth status
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/';
-  const successMessage = searchParams.get('message');
+  const redirectTo = searchParams?.get('redirect') || '/';
+  const successMessage = searchParams?.get('message');
   
   // ✅ Check for vibe check context
-  const isVibeCheckFlow = searchParams.get('vibe_check') === 'true';
-  const eventId = searchParams.get('event_id');
+  const isVibeCheckFlow = searchParams?.get('vibe_check') === 'true';
+  const eventId = searchParams?.get('event_id');
 
   // ✅ Handle automatic redirect for vibe check flow
   useEffect(() => {
@@ -40,8 +41,18 @@ export default function SignInPage() {
     setError('');
 
     try {
-      await signIn(email, password, rememberMe);
-      
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        // Show a generic error message for invalid credentials
+        setError('Either your email or password is wrong.');
+        setLoading(false);
+        return;
+      }
+
       if (isVibeCheckFlow && redirectTo !== '/') {
         // ✅ For vibe check flow, redirect with special parameters
         router.push(`${redirectTo}?open_vibe_check=true&event_id=${eventId}`);
@@ -51,9 +62,8 @@ export default function SignInPage() {
       }
       
       router.refresh();
-    } catch (err: any) {
-      console.error('Sign in error:', err);
-      setError(err.message || 'Failed to sign in');
+    } catch (err) {
+      setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -65,11 +75,11 @@ export default function SignInPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link href="/" className="flex justify-center">
           <Image
-            src="/gopher-gatherings-logo.svg"
+            src="/gophergather.png"
             alt="Gopher Gatherings"
             width={120}
             height={40}
-            className="h-12 w-auto"
+            className="h-40 w-auto"
             priority
           />
         </Link>
@@ -139,20 +149,8 @@ export default function SignInPage() {
 
             {/* Error Message */}
             {error && (
-              <div className="rounded-md bg-red-50 p-4 border border-red-200">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">Sign in failed</h3>
-                    <div className="mt-2 text-sm text-red-700">
-                      <p>{error}</p>
-                    </div>
-                  </div>
-                </div>
+              <div className="rounded-md bg-red-50 p-4 border border-red-200 text-red-800 text-sm mb-4">
+                {error}
               </div>
             )}
 

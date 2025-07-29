@@ -42,8 +42,9 @@ function formatTime(timeStr: string) {
   const period = hour24 >= 12 ? 'PM' : 'AM';
   return `${hour12}:${minutes} ${period}`;
 }
-export default function EventDetailPage({ params }: { params: Promise<{ id: string }>}) {
-  const { id } = useParams<{ id: string }>();
+export default function EventDetailPage() {
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -74,12 +75,12 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
       }
     }
 
-    fetchEvent();
+    if (id) fetchEvent();
   }, [id]);
 
   useEffect(() => {
-    const shouldOpenVibeCheck = searchParams.get('open_vibe_check') === 'true';
-    const eventIdFromUrl = searchParams.get('event_id');
+    const shouldOpenVibeCheck = searchParams?.get('open_vibe_check') === 'true';
+    const eventIdFromUrl = searchParams?.get('event_id');
     
     if (shouldOpenVibeCheck && eventIdFromUrl === id) {
       console.log('🎯 Auto-opening vibe check modal after authentication');
@@ -319,7 +320,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
       {/* Vibe Check Modal */}
       <VibeCheckModal
-        eventId={id}
+        eventId={id || ''}
         eventTitle={event?.title || ''}
         isOpen={vibeCheckOpen}
         onClose={() => setVibeCheckOpen(false)}

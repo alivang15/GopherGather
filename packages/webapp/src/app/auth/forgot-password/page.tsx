@@ -38,11 +38,11 @@ export default function ForgotPasswordPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <Link href="/" className="flex justify-center">
           <Image
-            src="/gopher-gatherings-logo.svg"
+            src="/gophergather.png"
             alt="Gopher Gatherings"
             width={120}
             height={40}
-            className="h-12 w-auto"
+            className="h-40 w-auto"
             priority
           />
         </Link>
@@ -178,7 +178,7 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#7a0019] focus:border-[#7a0019] text-sm bg-white text-gray-900"
-                    placeholder="your-email@umn.edu"
+                    placeholder="your-email@example.com"
                   />
                 </div>
                 <p className="mt-1 text-xs text-gray-500">

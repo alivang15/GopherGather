@@ -23,7 +23,7 @@ const bebasNeue = Bebas_Neue({
 });
 
 export const metadata: Metadata = {
-  title: "Gopher Gatherings",
+  title: "GopherGather",
   description: "Discover and create your campus events",
 };
 
@@ -39,16 +39,6 @@ export default function RootLayout({
       >
         <AuthProvider>
           <NavigationBar />
-          <header className="bg-white shadow">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center py-4">
-                {/* logo/nav */}
-                <div>...</div>
-                
-              </div>
-            </div>
-          </header>
-          
           <main>
             {children}
           </main>

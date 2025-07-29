@@ -62,8 +62,8 @@ export default function NavigationBar() {
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center">
               <Image
-                src="/gopher-gatherings-logo.svg"
-                alt="Gopher Gatherings"
+                src="/gophergather-logo.png"
+                alt="Gopher Gather"
                 width={120}
                 height={40}
                 className="h-10 w-auto"
@@ -82,13 +82,14 @@ export default function NavigationBar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo Section */}
-          <Link href="/" className="flex items-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg">
+          <Link href="/" className="inline-flex items-center -ml-15">
             <Image
-              src="/gopher-gatherings-logo.svg"
-              alt="Gopher Gatherings"
+              src="/gophergather-logo.png"
+              alt="Gopher Gather Logo"
               width={120}
               height={40}
-              className="h-30 w-30 -mt-14"
+              quality={100}
+              className="h-50 w-50"
               priority
             />
           </Link>

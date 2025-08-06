@@ -155,15 +155,13 @@ export default function NavigationBar() {
                         >
                           My Events
                         </button>
-                        <button 
-                          onClick={() => {
-                            alert('Create Event page coming soon!');
-                            setIsProfileOpen(false);
-                          }}
+                        <Link
+                          href="/admin/create-event"
+                          onClick={() => setIsProfileOpen(false)}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
                         >
                           Create Event
-                        </button>
+                        </Link>
                         <hr className="my-2" />
                         <button 
                           onClick={handleSignOut}

@@ -1,4 +1,5 @@
 "use client";
+import { useUserType } from "@/hooks/useUserType";
 
 import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
@@ -43,6 +44,7 @@ function formatTime(timeStr: string) {
   return `${hour12}:${minutes} ${period}`;
 }
 export default function EventDetailPage() {
+  const userType = useUserType();
   const params = useParams<{ id: string }>();
   const id = params?.id;
   const [event, setEvent] = useState<Event | null>(null);
@@ -298,6 +300,14 @@ export default function EventDetailPage() {
                       </svg>
                       Share Event
                     </button>
+                    {userType === "admin" && (
+                      <Link
+                        href={`/admin/edit-event/${event.id}`}
+                        className="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 mb-4"
+                      >
+                        Edit Event
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

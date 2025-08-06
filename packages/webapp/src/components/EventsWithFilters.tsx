@@ -4,22 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import EventCard from './EventCard';
 import FilterNavigation from './FilterNavigation';
-
-interface Event {
-  id: string;
-  title: string;
-  original_text?: string;
-  date?: string;
-  start_time?: string;
-  end_time?: string;
-  location?: string;
-  category: string;
-  audience?: string;
-  post_url?: string;
-  image_url?: string;
-  status: string;
-  created_at: string;
-}
+import type { Event } from "@/types";
 
 interface EventsWithFiltersProps {
   allEvents: Event[];
@@ -49,16 +34,16 @@ export default function EventsWithFilters({ allEvents }: EventsWithFiltersProps)
 
   // FIXED: Filter events based on category - corrected logic
   const filteredEvents = useMemo(() => {
-    console.log('Filtering events:', { selectedCategory, totalEvents: allEvents.length });
-    
+    let events = allEvents;
+
+    // Exclude soft-deleted events
+    events = events.filter(event => !event.deleted_at);
+
     if (selectedCategory === 'All Events') {
-      console.log('Showing all events:', allEvents.length);
-      return allEvents;
+      return events;
     }
-    
-    const filtered = allEvents.filter(event => event.category === selectedCategory);
-    console.log(`Filtered ${selectedCategory} events:`, filtered.length);
-    return filtered;
+
+    return events.filter(event => event.category === selectedCategory);
   }, [allEvents, selectedCategory]);
 
   // Handle category change

@@ -8,22 +8,7 @@ import { notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import VibeCheckModal from '@/components/VibeCheckModal'; // Import the component
-
-interface Event {
-  id: string;
-  title: string;
-  original_text?: string;
-  date?: string;
-  start_time?: string;
-  end_time?: string;
-  location?: string;
-  category: string;
-  audience?: string;
-  post_url?: string;
-  image_url?: string;
-  status: string;
-  created_at: string;
-}
+import type { Event } from "@/types";
 
 // Helper functions
 function formatDate(dateStr: string) {
@@ -108,6 +93,24 @@ export default function EventDetailPage() {
       }
     } catch (error) {
       console.log('Share cancelled or failed:', error);
+    }
+  };
+
+  const handleSoftDelete = async () => {
+    if (!event) {
+      alert("No event selected.");
+      return;
+    }
+
+    if (!confirm("Are you sure you want to delete this event? You can restore it within 30 days.")) return;
+    const { error } = await supabase
+      .from('events')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', event.id);
+    if (error) {
+      alert("Failed to delete event: " + error.message);
+    } else {
+      window.location.reload();
     }
   };
 
@@ -301,12 +304,20 @@ export default function EventDetailPage() {
                       Share Event
                     </button>
                     {userType === "admin" && (
-                      <Link
-                        href={`/admin/edit-event/${event.id}`}
-                        className="inline-block bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 mb-4"
-                      >
-                        Edit Event
-                      </Link>
+                      <div className="flex justify-center gap-4 mt-8">
+                        <Link
+                          href={`/admin/edit-event/${event.id}`}
+                          className="w-40 text-center bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center"
+                        >
+                          Edit Event
+                        </Link>
+                        <button
+                          onClick={handleSoftDelete}
+                          className="w-40 text-center bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-6 rounded-lg flex items-center justify-center transition-colors duration-200"
+                        >
+                          Delete Event
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

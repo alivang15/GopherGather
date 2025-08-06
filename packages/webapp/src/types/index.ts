@@ -5,6 +5,7 @@
 export interface Event {
   id: string;
   title: string;
+  deleted_at?: string;
   original_text?: string;
   date?: string;
   start_time?: string;

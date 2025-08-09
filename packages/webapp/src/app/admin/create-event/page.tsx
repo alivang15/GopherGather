@@ -6,6 +6,24 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserType } from "@/hooks/useUserType";
 
+const categoryOptions = [
+  "Academic",
+  "Career",
+  "Cultural",
+  "Social",
+  "Sports",
+  "Workshop",
+];
+
+const audienceOptions = [
+  "Open to all",
+  "Undergraduate students",
+  "Graduate students",
+  "Faculty/Staff",
+  "Alumni",
+  "Invite Only",
+];
+
 export default function CreateEventPage() {
   const { user, loading } = useAuth();
   const userType = useUserType();
@@ -159,7 +177,7 @@ export default function CreateEventPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-2xl bg-white p-8 shadow border border-gray-200 rounded-lg">
-        <h1 className="text-2xl font-bold mb-6">Create Event</h1>
+        <h1 className="text-2xl font-bold text-gray-700 mb-6">Create Event</h1>
         {error && <p className="mb-4 text-red-600">{error}</p>}
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
@@ -236,24 +254,33 @@ export default function CreateEventPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Category
               </label>
-              <input
-                type="text"
+              <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={e => setCategory(e.target.value)}
                 required
-                className="w-full border-gray-300 rounded-md px-3 py-2 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-              />
+                className="w-full border-gray-300 rounded-md px-3 py-2 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#7a0019]"
+              >
+                <option value="">Select a category</option>
+                {categoryOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Audience
               </label>
-              <input
-                type="text"
+              <select
                 value={audience}
-                onChange={(e) => setAudience(e.target.value)}
-                className="w-full border-gray-300 rounded-md px-3 py-2 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-600"
-              />
+                onChange={e => setAudience(e.target.value)}
+                required
+                className="w-full border-gray-300 rounded-md px-3 py-2 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#7a0019]"
+              >
+                <option value="">Select an audience</option>
+                {audienceOptions.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
             </div>
           </div>
           <div>

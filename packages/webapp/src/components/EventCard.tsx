@@ -2,6 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { supabase } from '@/lib/supabase';
 
 interface EventCardProps {
   event: {
@@ -16,10 +18,29 @@ interface EventCardProps {
     audience?: string;
     image_url?: string;
     status: string;
+    club_id?: string; // Added club_id for fetching club name
   };
 }
 
 export default function EventCard({ event }: EventCardProps) {
+  const [now, setNow] = useState<Date | null>(null);
+  const [clubName, setClubName] = useState<string | null>(null);
+
+  useEffect(() => {
+    setNow(new Date());
+  }, []);
+
+  useEffect(() => {
+    if (event?.club_id) {
+      supabase
+        .from('clubs')
+        .select('name')
+        .eq('id', event.club_id)
+        .single()
+        .then(({ data }) => setClubName(data?.name ?? null));
+    }
+  }, [event?.club_id]);
+
   /**
    * Format date string to readable format
    */
@@ -55,7 +76,8 @@ export default function EventCard({ event }: EventCardProps) {
   const getEventStatus = () => {
     if (!event.date) return 'upcoming';
     
-    const now = new Date();
+    if (!now) return 'upcoming'; // Wait for current time to be set
+
     const currentYear = now.getFullYear();
     const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
     const currentDay = now.getDate().toString().padStart(2, '0');
@@ -197,7 +219,7 @@ export default function EventCard({ event }: EventCardProps) {
         {/* Content with hover animations */}
         <div className="p-4">
           <div className="flex justify-between items-start mb-3">
-            <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 flex-1 transition-colors duration-200 group-hover:text-blue-600">
+            <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 flex-1 transition-colors duration-200 group-hover:text-[]">
               {event.title}
             </h3>
             <div className="transform transition-all duration-200 group-hover:scale-110 ml-2">
@@ -216,7 +238,7 @@ export default function EventCard({ event }: EventCardProps) {
           <div className="space-y-2 text-sm text-gray-600">
             {/* Date - Always shown */}
             <div className="flex items-center transition-all duration-200 group-hover:text-gray-800 group-hover:translate-x-1">
-              <svg className="w-4 h-4 mr-2 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-3 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <span>{displayDate}</span>
@@ -224,7 +246,7 @@ export default function EventCard({ event }: EventCardProps) {
 
             {/* Time - Always shown */}
             <div className="flex items-center transition-all duration-200 group-hover:text-gray-800 group-hover:translate-x-1">
-              <svg className="w-4 h-4 mr-2 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-3 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span>{displayTime}</span>
@@ -232,7 +254,7 @@ export default function EventCard({ event }: EventCardProps) {
 
             {/* Location - Always shown */}
             <div className="flex items-center transition-all duration-200 group-hover:text-gray-800 group-hover:translate-x-1">
-              <svg className="w-4 h-4 mr-2 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-3 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
@@ -241,12 +263,42 @@ export default function EventCard({ event }: EventCardProps) {
 
             {/* Audience - Always shown */}
             <div className="flex items-center transition-all duration-200 group-hover:text-gray-800 group-hover:translate-x-1">
-              <svg className="w-4 h-4 mr-2 transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+              <svg
+                className="w-5 h-5 mr-2 text-gray-600 transition-transform duration-200 group-hover:scale-110"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <span>{displayAudience}</span>
+              <span className="flex items-center gap-2 text-gray-700 text-sm">
+                {displayAudience}
+              </span>
             </div>
           </div>
+          {/* Club Name */}
+          {clubName && (
+            <div className="flex items-center gap-2 text-gray-700 mt-3 transition-all duration-200 group-hover:text-gray-800 group-hover:translate-x-1">
+              <svg
+                className="w-5 h-5 text-gray-600 transition-transform duration-200 group-hover:scale-110 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 48 48"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                {/* Club/group icon */}
+                <circle cx="14" cy="20" r="4" />
+                <circle cx="34" cy="20" r="4" />
+                <circle cx="24" cy="12" r="4" />
+                <rect x="8" y="28" width="32" height="8" rx="2" />
+                <circle cx="24" cy="24" r="4" />
+                <path d="M8 36l-4 6h40l-4-6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              <span className="font-medium">{clubName}</span>
+            </div>
+          )}
 
           {/* Category Badge and Read More */}
           <div className="flex justify-between items-center mt-4">

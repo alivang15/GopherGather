@@ -81,24 +81,22 @@ export default function VibeCheckModal({ eventId, eventTitle, isOpen, onClose }:
   };
 
   const submitVibeCheck = async () => {
-    // ✅ Check authentication before allowing submission
     if (!user) {
       alert('Please sign in to submit a vibe check!');
       return;
     }
-
     if (!selectedVibe || !userName.trim()) return;
 
     try {
       setSubmitting(true);
       const selectedVibeOption = VIBE_OPTIONS.find(v => v.value === selectedVibe);
-      
+
       const { data, error } = await supabase
         .from('vibe_checks')
         .insert([{
           event_id: eventId,
           user_name: userName.trim(),
-          user_email: user.email, // ✅ Store user email for identification
+          user_email: user.email, // must match authenticated user
           vibe_rating: selectedVibe,
           vibe_emoji: selectedVibeOption?.emoji || '😊',
           comment: comment.trim()
@@ -110,8 +108,7 @@ export default function VibeCheckModal({ eventId, eventTitle, isOpen, onClose }:
         console.error('Error submitting vibe check:', error);
         alert('Failed to submit vibe check. Please try again.');
       } else {
-        // Add new vibe check to the list
-        setVibeChecks(prev => [data, ...prev]);
+        setVibeChecks(prev => [data, ...prev]); // local refresh
         
         // Reset form
         setSelectedVibe(null);
@@ -121,9 +118,6 @@ export default function VibeCheckModal({ eventId, eventTitle, isOpen, onClose }:
         // Show success message
         alert('Vibe check submitted! 🎉');
       }
-    } catch (err) {
-      console.error('Error:', err);
-      alert('Something went wrong. Please try again.');
     } finally {
       setSubmitting(false);
     }

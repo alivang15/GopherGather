@@ -132,10 +132,18 @@ export default function NavigationBar() {
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
                     className="flex items-center space-x-2 p-1 rounded-lg hover:bg-gray-100 transition-colors"
                   >
-                    <div className="w-8 h-8 md:w-10 md:h-10 bg-yellow-400 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-semibold text-gray-800">
-                        {user.email?.charAt(0).toUpperCase() || 'U'}
-                      </span>
+                    <div className="w-8 h-8 md:w-10 md:h-10 bg-yellow-400 rounded-full flex items-center justify-center overflow-hidden">
+                      {user?.user_metadata?.avatar_url ? (
+                        <img
+                          src={user.user_metadata.avatar_url}
+                          alt="Profile"
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      ) : (
+                        <span className="text-lg font-bold text-white">
+                          {user.email ? user.email[0]?.toUpperCase() : "?"}
+                        </span>
+                      )}
                     </div>
                   </button>
 
@@ -144,19 +152,19 @@ export default function NavigationBar() {
                     <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                       <div className="p-4 border-b border-gray-200">
                         <p className="font-semibold text-gray-900">Welcome back!</p>
-                        <p className="text-sm text-gray-600 truncate">{user.email}</p>
+                        <p className="text-sm text-gray-600 truncate">
+                          {user.email ?? "No email"}
+                        </p>
                         <p className="text-xs text-green-600">✅ Authenticated</p>
                       </div>
                       <div className="p-2">
-                        <button 
-                          onClick={() => {
-                            alert('Profile page coming soon!');
-                            setIsProfileOpen(false);
-                          }}
+                        <Link
+                          href="/profile"
+                          onClick={() => setIsProfileOpen(false)}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
                         >
                           Profile Settings
-                        </button>
+                        </Link>
                         <button 
                           onClick={() => {
                             alert('My Events page coming soon!');

@@ -66,44 +66,22 @@ export default function EventsWithFilters({ allEvents }: EventsWithFiltersProps)
     // Helper function to determine if an event is past
     const isEventPast = (event: Event): boolean => {
       if (!event.date) return false;
-      
-      // If event date is in the past
-      if (event.date < currentDate) return true;
-      
-      // If event date is in the future
-      if (event.date > currentDate) return false;
-      
-      // If event is today, check time
-      if (event.date === currentDate) {
-        if (!event.start_time) {
-          return false; // No time specified, not past yet
-        }
-        
-        // Normalize time format
-        const eventStart = event.start_time.includes(':') 
-          ? (event.start_time.split(':').length === 2 ? `${event.start_time}:00` : event.start_time)
-          : event.start_time;
-        
-        if (event.end_time) {
-          // Has end time - check if end time has passed
-          const eventEnd = event.end_time.includes(':') 
-            ? (event.end_time.split(':').length === 2 ? `${event.end_time}:00` : event.end_time)
-            : event.end_time;
-          return eventEnd < currentTime;
-        } else {
-          // No end time - consider past 2 hours after start time
-          const startHour = parseInt(eventStart.split(':')[0]);
-          const startMinute = parseInt(eventStart.split(':')[1]);
-          
-          // Calculate 2 hours after start time
-          const endHour = startHour + 2;
-          const endTime = `${endHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}:00`;
-          
-          return endTime < currentTime;
-        }
+      const now = new Date();
+
+      // Build event end datetime
+      let endTime = "23:59:59";
+      if (event.end_time) {
+        endTime = event.end_time.length === 5 ? `${event.end_time}:00` : event.end_time;
+      } else if (event.start_time) {
+        // Add 2 hours to start_time
+        const [h, m] = event.start_time.split(":").map(Number);
+        const endH = (h + 2) % 24;
+        endTime = `${endH.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:00`;
       }
-      
-      return false;
+      // Combine date and time
+      const eventEnd = new Date(`${event.date}T${endTime}`);
+
+      return eventEnd < now;
     };
 
     // Helper function to determine if an event is currently happening

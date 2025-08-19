@@ -4,74 +4,95 @@ A modern event discovery platform for the University of Minnesota community.
 
 ## Features
 
-- 🎯 **Real-time Events**: See what's happening now on campus
-- 📅 **Event Categories**: Filter by Academic, Social, Sports, Cultural, Career, and Workshop events
-- 🔍 **Smart Filtering**: Easily find events that match your interests
-- 📱 **Responsive Design**: Works perfectly on all devices
-- ♿ **Accessible**: Built with accessibility in mind
+- 🎯 Real-time Events and filtering by category
+- 🧭 Smart Filters: Academic, Social, Sports, Cultural, Career, Workshop
+- 👤 Profile: account details and preferences (notifications coming soon)
+- 🏆 Leaderboard: community stats, Top Event Goers, Trending Events, Popular Categories
+- 📅 Events This Week: quick snapshot of what’s happening now
+- 🖼️ Avatars: user profile images stored in Supabase Storage (public `avatars` bucket)
+- 📱 Responsive and ♿ Accessible UI
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15, React 19, TypeScript
-- **Styling**: Tailwind CSS 4
-- **Database**: Supabase
-- **Deployment**: Vercel
+- Frontend: Next.js 15, React 19, TypeScript
+- Styling: Tailwind CSS 4
+- Database/Auth/Storage: Supabase
+- Deployment: Vercel
 
 ## Getting Started
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/umn-events.git
-   cd umn-events
-   ```
+1) Clone
+```bash
+git clone https://github.com/your-username/umn-events.git
+cd umn-events
+```
 
-2. **Install dependencies**
-   ```bash
-   cd packages/webapp
-   npm install
-   ```
+2) Install dependencies
+```bash
+cd packages/webapp
+npm install
+```
 
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env.local
-   # Edit .env.local with your Supabase credentials
-   ```
+3) Environment variables
+```bash
+cp .env.example .env.local
+# Edit .env.local with your Supabase credentials
+# Required:
+# NEXT_PUBLIC_SUPABASE_URL=
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=
+```
 
-4. **Run the development server**
-   ```bash
-   npm run dev
-   ```
+4) Supabase setup (database + storage)
+- Create a public storage bucket named `avatars`. Avatars are stored under `users/<user-id>/...`.
+- Ensure tables exist: `users`, `events`, `rsvps`.
+- Because RLS restricts broad SELECTs, the app uses SECURITY DEFINER RPCs for aggregates:
+  - public.get_total_students()
+  - public.get_events_in_range(start_date date, end_date date)
+  - public.get_top_event_goers(limit_count int)
+  - public.get_trending_events(limit_count int)
+  - public.get_popular_categories(limit_count int)
 
-5. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+Grant EXECUTE on each RPC to role `authenticated`. See code where these are used in:
+- [packages/webapp/src/components/profile/LeaderboardSection.tsx](packages/webapp/src/components/profile/LeaderboardSection.tsx)
+
+5) Run the web app
+```bash
+npm run dev
+# open http://localhost:3000
+```
 
 ## Project Structure
 
 ```
 packages/webapp/
 ├── src/
-│   ├── app/                 # Next.js App Router
-│   ├── components/          # React components
-│   ├── lib/                 # Utilities and configurations
-│   └── types/               # TypeScript type definitions
-├── public/                  # Static assets
+│   ├── app/                      # Next.js App Router
+│   │   ├── profile/              # Profile pages (Account, Profile, Leaderboard, Notifications)
+│   │   └── admin/create-event/   # Admin: create event page
+│   ├── components/               # UI components
+│   │   └── profile/              # Profile-related components
+│   ├── hooks/                    # Reusable hooks
+│   ├── lib/                      # Supabase client and utilities
+│   └── types/                    # TypeScript type definitions
+├── public/                       # Static assets
 └── package.json
 ```
 
-## Key Components
+## Key Pages and Components
 
-- **NavigationBar**: Main navigation with logo and user actions
-- **FilterNavigation**: Category filtering for events
-- **EventCard**: Individual event display component
-- **EventsWithFilters**: Main events listing with filtering logic
+- Pages
+  - [Profile](packages/webapp/src/app/profile/page.tsx): sidebar navigation for Account, Profile, Leaderboard, Notifications
+  - [Create Event](packages/webapp/src/app/admin/create-event/page.tsx): admin utility to add events
+- Profile components
+  - [AccountSection](packages/webapp/src/components/profile/AccountSection.tsx)
+  - [ProfileSection](packages/webapp/src/components/profile/ProfileSection.tsx) — Achievement Highlights currently commented out
+  - [LeaderboardSection](packages/webapp/src/components/profile/LeaderboardSection.tsx)
+  - [NotificationsSection](packages/webapp/src/components/profile/NotificationsSection.tsx) — Coming soon
+- Events
+  - [EventsWithFilters](packages/webapp/src/components/EventsWithFilters.tsx)
+  - [EventCard](packages/webapp/src/components/EventCard.tsx)
 
-## Contributing
-
-1. Create a feature branch
-2. Make your changes
-3. Test thoroughly
-4. Submit a pull request
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License — see LICENSE

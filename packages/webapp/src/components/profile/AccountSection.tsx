@@ -2,9 +2,29 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import type { AccountSectionProps } from "@/types";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function AccountSection({ user, onAvatarChange, uploading, fileInputRef }: AccountSectionProps) {
   const { resetPassword } = useAuth();
+  const [displayName, setDisplayName] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false); // user is editing
+
+  // Initialize once per user id; don't clobber while user is typing
+  useEffect(() => {
+    if (!user || isDirty) return;
+    const full = user.user_metadata?.full_name as string | undefined;
+    const initial =
+      (full && full.trim()) ||
+      (user.email ? user.email.split("@")[0] : "");
+    setDisplayName(initial || "");
+  }, [user?.id, isDirty]);
+
+  // Reset dirty flag when the signed-in user changes
+  useEffect(() => {
+    setIsDirty(false);
+  }, [user?.id]);
 
   const handleReset = async () => {
     if (!user?.email) {
@@ -16,6 +36,29 @@ export default function AccountSection({ user, onAvatarChange, uploading, fileIn
       alert("Password reset email sent. Check your inbox.");
     } catch (e: any) {
       alert(`Failed to send reset email: ${e?.message ?? "Unknown error"}`);
+    }
+  };
+
+  const handleSaveDisplayName = async () => {
+    if (!displayName || displayName.trim().length === 0) {
+      alert("Please enter a display name.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { full_name: displayName.trim() },
+      });
+      if (error) throw error;
+      alert("Display name updated.");
+      // Optional: if your AuthContext exposes refreshUser, call it here to propagate without reload.
+      // await refreshUser?.();
+      setIsDirty(false);
+    } catch (e: any) {
+      console.error("update display name failed:", e);
+      alert(`Failed to update display name: ${e?.message ?? "Unknown error"}`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -65,6 +108,30 @@ export default function AccountSection({ user, onAvatarChange, uploading, fileIn
               disabled={uploading}
             />
           </div>
+        </div>
+      </div>
+
+      {/* Display name */}
+      <div className="p-4 sm:p-6 mb-8">
+        <h4 className="text-lg font-semibold text-gray-900 mb-3">Display Name</h4>
+        <p className="text-sm text-gray-600 mb-3">This name will be shown across the site instead of your email local-part.</p>
+        <div className="flex items-center gap-3 max-w-md">
+          <input
+            type="text"
+            value={displayName}
+            onChange={(e) => { setDisplayName(e.target.value); setIsDirty(true); }}
+            className="flex-1 px-3 py-2 border rounded-md"
+            placeholder="Display name"
+            aria-label="Display name"
+          />
+          <button
+            type="button"
+            onClick={handleSaveDisplayName}
+            disabled={saving}
+            className="px-3 py-2 rounded-md bg-[#7a0019] text-white text-sm hover:bg-red-800 disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Save"}
+          </button>
         </div>
       </div>
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import Link from "next/link";
 
 interface VibeCheck {
   id: string;
@@ -37,6 +38,7 @@ export default function VibeCheckModal({ eventId, eventTitle, isOpen, onClose }:
   const [selectedVibe, setSelectedVibe] = useState<number | null>(null);
   const [comment, setComment] = useState('');
   const [showSubmitForm, setShowSubmitForm] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   
   // ✅ Get authentication state
   const { user, loading: authLoading } = useAuth();
@@ -46,10 +48,13 @@ export default function VibeCheckModal({ eventId, eventTitle, isOpen, onClose }:
 
   useEffect(() => {
     if (user) {
-      // Extract first name from email or use full email
-      const emailName = user.email?.split('@')[0] || '';
-      const displayName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
-      setUserName(displayName);
+      // Prefer explicit full_name metadata, else fallback to email local-part
+      const full = user?.user_metadata?.full_name;
+      const base = full && typeof full === 'string' && full.trim().length > 0
+        ? full
+        : (user.email?.split('@')[0] ?? '');
+      const display = base.charAt(0).toUpperCase() + base.slice(1);
+      setUserName(display);
     }
   }, [user]);
 
@@ -66,6 +71,8 @@ export default function VibeCheckModal({ eventId, eventTitle, isOpen, onClose }:
         .from('vibe_checks')
         .select('*')
         .eq('event_id', eventId)
+        .not('comment', 'is', null)
+        .neq('comment', '')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -120,6 +127,26 @@ export default function VibeCheckModal({ eventId, eventTitle, isOpen, onClose }:
       }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const deleteComment = async (checkId: string) => {
+    if (!user) return;
+    if (!confirm("Delete your comment for this vibe check?")) return;
+    try {
+      setDeletingId(checkId);
+      const { error } = await supabase
+        .from("vibe_checks")
+        .update({ comment: null })
+        .eq("id", checkId)
+        .eq("user_email", user.email);
+      if (error) throw error;
+     // Remove from UI list
+     setVibeChecks((prev) => prev.filter((vc) => vc.id !== checkId));
+    } catch (e: any) {
+      alert(`Failed to delete comment: ${e?.message ?? "Unknown error"}`);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -298,6 +325,12 @@ export default function VibeCheckModal({ eventId, eventTitle, isOpen, onClose }:
                   <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                     <h3 className="font-semibold text-gray-900 mb-4">Share Your Vibe!</h3>
                     
+                    {/* Optional: link to full page */}
+                    <div className="mb-3 text-right">
+                      <Link href={`/events/${eventId}/vibe-check`} className="text-xs text-purple-600 hover:underline">
+                         Open full Vibe Check page
+                       </Link>
+                    </div>
                     {!showSubmitForm ? (
                       <button
                         onClick={() => setShowSubmitForm(true)}
@@ -400,10 +433,21 @@ export default function VibeCheckModal({ eventId, eventTitle, isOpen, onClose }:
                               <div className="flex items-start space-x-3">
                                 <span className="text-lg">{check.vibe_emoji}</span>
                                 <div className="flex-1">
-                                  <div className="flex items-center space-x-2 text-sm">
-                                    <span className="font-medium text-gray-900">{check.user_name}</span>
-                                    <span className="text-gray-500">•</span>
-                                    <span className="text-gray-500">{date} at {time}</span>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2 text-sm">
+                                      <span className="font-medium text-gray-900">{check.user_name}</span>
+                                      <span className="text-gray-500">•</span>
+                                      <span className="text-gray-500">{date} at {time}</span>
+                                    </div>
+                                    {user && check.comment && check.user_email === user.email && (
+                                      <button
+                                        onClick={() => deleteComment(check.id)}
+                                        disabled={deletingId === check.id}
+                                        className="text-xs text-red-600 hover:underline disabled:opacity-50"
+                                      >
+                                        {deletingId === check.id ? "Deleting..." : "Delete"}
+                                      </button>
+                                    )}
                                   </div>
                                   {check.comment && (
                                     <p className="text-sm text-gray-700 mt-1">{check.comment}</p>

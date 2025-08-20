@@ -1,35 +1,42 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import AccountSection from "@/components/profile/AccountSection";
-import LeaderboardSection from "@/components/profile/LeaderboardSection";
 import ProfileSection from "@/components/profile/ProfileSection";
+import LeaderboardSection from "@/components/profile/LeaderboardSection";
 import NotificationsSection from "@/components/profile/NotificationsSection";
 
-const sidebarOptions = [
-  { key: "account", label: "Account" },
-  { key: "profile", label: "Profile" },
-  { key: "notifications", label: "Notifications" },
-  { key: "leaderboard", label: "Leaderboard" },
-];
+const VALID_SECTIONS = ["account", "profile", "leaderboard", "notifications"] as const;
+type Section = (typeof VALID_SECTIONS)[number];
 
-export default function ProfileSettingsPage() {
-  const { user } = useAuth();
+export default function ProfilePage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const param = searchParams?.get("section") ?? "account";
+  const initial = VALID_SECTIONS.includes(param as Section) ? (param as Section) : "account";
+
   const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState("account");
+  const [selected, setSelected] = useState<Section>(initial);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
 
   useEffect(() => {
-    // Fetch user profile data if needed
-    if (user) {
-      setProfile(user);
-      setLoading(false);
-    }
+    setProfile(user ?? null);
   }, [user]);
+
+  useEffect(() => {
+    const s = searchParams?.get("section") ?? "account";
+    if (VALID_SECTIONS.includes(s as Section) && s !== selected) {
+      setSelected(s as Section);
+    }
+  }, [searchParams, selected]);
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -91,7 +98,15 @@ export default function ProfileSettingsPage() {
     }
   };
 
-  if (loading) {
+  const selectTab = (s: Section) => {
+    setSelected(s);
+    // update query param without page reload
+    const params = new URLSearchParams(searchParams?.toString() ?? "");
+    params.set("section", s);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  if (authLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
@@ -105,16 +120,16 @@ export default function ProfileSettingsPage() {
         <aside className="rounded-2xl p-4 md:p-5 lg:sticky lg:top-20">
           <div className="bg-white rounded-lg shadow p-4 sm:p-6 space-y-2">
             <nav className="flex flex-col gap-1">
-              {sidebarOptions.map(opt => (
+              {VALID_SECTIONS.map(opt => (
                 <button
-                  key={opt.key}
-                  onClick={() => setSelected(opt.key)}
+                  key={opt}
+                  onClick={() => selectTab(opt)}
                   className={`text-left px-3 py-2 rounded font-medium transition
-                    ${selected === opt.key
+                    ${selected === opt
                       ? "bg-[#f3e6e8] text-[#7a0019] shadow"
                       : "text-gray-700 hover:bg-gray-100"}`}
                 >
-                  {opt.label}
+                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
                 </button>
               ))}
             </nav>

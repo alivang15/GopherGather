@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Bebas_Neue } from "next/font/google";
 import NavigationBar from "@/components/NavigationBar";
-import { AuthProvider } from "@/contexts/AuthContext";
+import Providers from "./Providers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,9 +22,16 @@ const bebasNeue = Bebas_Neue({
   display: "swap",
 });
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "GopherGather",
-  description: "Discover and create your campus events",
+  icons: {
+    icon: [
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+    shortcut: "/favicon-32x32.png",
+  },
 };
 
 export default function RootLayout({
@@ -37,13 +44,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
+        <Providers>
           <NavigationBar />
-          <main>
-            {children}
-          </main>
-        </AuthProvider>
-
+          <main>{children}</main>
+        </Providers>
       </body>
     </html>
   );

@@ -76,6 +76,7 @@ export interface ProfileOverview {
   dayStreak: number;
   favorites: { category: string; attended: number }[];
   campusImpact: { vibe_checks: number };
+  eventsAttendedThisWeek?: number;
 }
 
 export interface AccountSectionProps {

@@ -7,7 +7,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import VibeCheckModal from '@/components/VibeCheckModal'; // Import the component
 import type { Event } from "@/types";
 
 // Helper functions
@@ -35,7 +34,6 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [vibeCheckOpen, setVibeCheckOpen] = useState(false); // Add state for modal
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -65,18 +63,13 @@ export default function EventDetailPage() {
     if (id) fetchEvent();
   }, [id]);
 
+  // (Optional old behavior) auto-open modal after auth redirect
+  const [vibeCheckOpen, setVibeCheckOpen] = useState(false);
+
   useEffect(() => {
     const shouldOpenVibeCheck = searchParams?.get('open_vibe_check') === 'true';
     const eventIdFromUrl = searchParams?.get('event_id');
-    
-    if (shouldOpenVibeCheck && eventIdFromUrl === id) {
-      console.log('🎯 Auto-opening vibe check modal after authentication');
-      setVibeCheckOpen(true);
-      
-      // ✅ Clean up URL parameters
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
-    }
+    if (shouldOpenVibeCheck && eventIdFromUrl === id) setVibeCheckOpen(true);
   }, [searchParams, id]);
 
   const handleShare = async () => {
@@ -283,15 +276,15 @@ export default function EventDetailPage() {
                     )}
 
                     {/* Vibe Check Button - NOW FUNCTIONAL! */}
-                    <button 
-                      onClick={() => setVibeCheckOpen(true)}
+                    <Link
+                      href={`/events/${id}/vibe-check`}
                       className="flex items-center justify-center w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-105"
                     >
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                       </svg>
                       ✨ Get Vibe Check ✨
-                    </button>
+                    </Link>
 
                     {/* Share Button */}
                     <button 
@@ -339,13 +332,7 @@ export default function EventDetailPage() {
         </div>
       </main>
 
-      {/* Vibe Check Modal */}
-      <VibeCheckModal
-        eventId={id || ''}
-        eventTitle={event?.title || ''}
-        isOpen={vibeCheckOpen}
-        onClose={() => setVibeCheckOpen(false)}
-      />
+      {/* Modal removed in favor of dedicated page */}
     </div>
   );
 }

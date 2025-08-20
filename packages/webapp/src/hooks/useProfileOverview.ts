@@ -10,6 +10,19 @@ export function useProfileOverview() {
   const [data, setData] = useState<ProfileOverview | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Monday 00:00 local -> next Monday 00:00 local
+  function getThisWeekRange() {
+    const now = new Date();
+    const day = now.getDay(); // Sun=0..Sat=6
+    const diffToMonday = (day === 0 ? -6 : 1 - day);
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() + diffToMonday);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 7);
+    return { startISO: start.toISOString(), endISO: end.toISOString() };
+  }
+
   const load = async () => {
     if (!user) return;
     setLoading(true);
@@ -18,7 +31,21 @@ export function useProfileOverview() {
       console.error("get_profile_overview error:", error);
       setData(null);
     } else {
-      setData(res as ProfileOverview);
+      // Weekly RSVPs (going) created this week
+      const { startISO, endISO } = getThisWeekRange();
+      const { count, error: weekErr } = await supabase
+        .from("rsvps")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("status", "going")
+        .gte("created_at", startISO)
+        .lt("created_at", endISO);
+      if (weekErr) console.warn("weekly RSVPs count error:", weekErr);
+      setData({
+        ...(res as ProfileOverview),
+        // prefer 0 when null/undefined
+        eventsAttendedThisWeek: count ?? 0,
+      } as ProfileOverview);
     }
     setLoading(false);
   };

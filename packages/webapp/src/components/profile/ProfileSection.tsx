@@ -112,17 +112,19 @@ export default function ProfileSection() {
             <div className="space-y-3">
               <h5 className="font-semibold text-gray-900">Favorite Event Types</h5>
               <div className="space-y-2 text-gray-600">
-                {(data?.favorites ?? []).slice(0, 3).map((f) => (
-                  <div
-                    key={f.category}
-                    className="flex justify-between items-center"
-                  >
-                    <span className="text-sm">{f.category}</span>
-                    <span className="text-xs px-2 py-1 rounded bg-gray-100">
-                      {f.attended} attended
-                    </span>
-                  </div>
-                ))}
+                {(data?.favorites ?? []).slice(0, 3).map(
+                  (f: { category: string; attended: number }) => (
+                    <div
+                      key={f.category}
+                      className="flex justify-between items-center"
+                    >
+                      <span className="text-sm">{f.category}</span>
+                      <span className="text-xs px-2 py-1 rounded bg-gray-100">
+                        {f.attended} attended
+                      </span>
+                    </div>
+                  )
+                )}
                 {(!data || (data?.favorites ?? []).length === 0) && (
                   <div className="text-sm text-gray-500">
                     {loading ? "Loading…" : "No data yet"}
@@ -151,12 +153,7 @@ export default function ProfileSection() {
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">This Week</span>
               <span className="font-semibold text-gray-600">
-                {loading
-                  ? "…"
-                  : `${Math.min(
-                      data?.activeRsvps ?? 0,
-                      data?.eventsAttended ?? 0
-                    )} events attended`}
+                {loading ? "…" : `${data?.eventsAttendedThisWeek ?? 0} events attended`}
               </span>
             </div>
             <div className="flex justify-between items-center">

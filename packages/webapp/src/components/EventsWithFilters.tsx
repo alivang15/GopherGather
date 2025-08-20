@@ -18,7 +18,10 @@ export default function EventsWithFilters({ allEvents }: EventsWithFiltersProps)
   const [selectedCategory, setSelectedCategory] = useState(() => {
     return searchParams?.get('category') || 'All Events';
   });
-
+  
+  // Add state to track how many past events to show
+  const [shownPastEvents, setShownPastEvents] = useState(6);
+  
   // Update URL when category changes
   useEffect(() => {
     const params = new URLSearchParams(searchParams?.toString() || '');
@@ -115,8 +118,27 @@ export default function EventsWithFilters({ allEvents }: EventsWithFiltersProps)
     const currentEvents = events.filter(event => !isEventPast(event) && isEventCurrent(event));
     const upcomingEvents = events.filter(event => !isEventPast(event) && !isEventCurrent(event));
 
-    return { currentEvents, upcomingEvents, pastEvents };
-  };
+    // Sort past events newest first by event end datetime
+    const normalizeEndTime = (ev: Event) => {
+      let endTime = "23:59:59";
+      if (ev.end_time) {
+        endTime = ev.end_time.length === 5 ? `${ev.end_time}:00` : ev.end_time;
+      } else if (ev.start_time) {
+        const [h, m] = ev.start_time.split(":").map(Number);
+        const endH = (h + 2) % 24;
+        endTime = `${endH.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:00`;
+      }
+      return `${ev.date}T${endTime}`;
+    };
+
+    pastEvents.sort((a, b) => {
+      const aT = new Date(normalizeEndTime(a)).getTime();
+      const bT = new Date(normalizeEndTime(b)).getTime();
+      return bT - aT; // newest first
+    });
+ 
+     return { currentEvents, upcomingEvents, pastEvents };
+   };
 
   const { currentEvents, upcomingEvents, pastEvents } = categorizeEvents(filteredEvents);
 
@@ -126,6 +148,14 @@ export default function EventsWithFilters({ allEvents }: EventsWithFiltersProps)
     upcoming: upcomingEvents.length,
     past: pastEvents.length
   });
+
+  // Function to load more past events
+  const loadMorePastEvents = () => {
+    // Increase by 6 more events, or show all remaining if less than 6 remain
+    setShownPastEvents(prev => 
+      Math.min(prev + 6, pastEvents.length)
+    );
+  };
 
   return (
     <>
@@ -218,7 +248,7 @@ export default function EventsWithFilters({ allEvents }: EventsWithFiltersProps)
             {pastEvents.length > 0 && (
               <div id="past-events" className="mb-12 scroll-mt-32">
                 <h2 className="bebas-neue-regular text-3xl text-[#7a0019] mb-6 text-center">
-                  📚 PAST EVENTS
+                  PAST EVENTS
                 </h2>
                 <div className="bg-gray-50 rounded-lg shadow-sm p-6 mb-6">
                   <p className="text-center text-gray-600">
@@ -226,18 +256,21 @@ export default function EventsWithFilters({ allEvents }: EventsWithFiltersProps)
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {pastEvents.slice(0, 12).map((event) => (
+                  {pastEvents.slice(0, shownPastEvents).map((event) => (
                     <div key={event.id} className="opacity-75 hover:opacity-100 transition-opacity">
                       <EventCard event={event} />
                     </div>
                   ))}
                 </div>
                 
-                {pastEvents.length > 12 && (
+                {shownPastEvents < pastEvents.length && (
                   <div className="text-center mt-8">
-                    <span className="px-6 py-3 bg-gray-600 text-white rounded-lg">
-                      Load More Past Events ({pastEvents.length - 12} remaining)
-                    </span>
+                    <button 
+                      onClick={loadMorePastEvents}
+                      className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors cursor-pointer"
+                    >
+                      Load More Past Events ({pastEvents.length - shownPastEvents} remaining)
+                    </button>
                   </div>
                 )}
               </div>

@@ -3,18 +3,36 @@ import EventsWithFilters from '@/components/EventsWithFilters';
 import { supabase } from '@/lib/supabase';
 
 async function getEvents() {
-  const { data: events, error } = await supabase
-    .from('events')
-    .select('*')
-    .eq('status', 'approved')
-    .order('date', { ascending: true });
+  try {
+    const { data: events, error, status } = await supabase
+      .from('events')
+      .select('*')
+      .eq('status', 'approved')
+      .order('date', { ascending: true });
 
-  if (error) {
-    console.error('Error fetching events:', error);
+    if (error) {
+      // print more diagnostic info — JSON.stringify may miss non-enumerable props so include name/message/status
+      console.error('Supabase error:', {
+        name: (error as any)?.name,
+        message: (error as any)?.message,
+        status,
+        raw: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+      });
+
+      // dev-only: check whether env is present (don't log secrets in prod)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('NEXT_PUBLIC_SUPABASE_URL present?', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
+        console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY present?', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+      }
+
+      return [];
+    }
+
+    return events || [];
+  } catch (err) {
+    console.error('Unexpected error fetching events:', err);
     return [];
   }
-
-  return events || [];
 }
 
 // Wrapper component to handle search params

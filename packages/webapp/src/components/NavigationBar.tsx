@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useUserType } from '@/hooks/useUserType';
-import { useUser } from '@supabase/auth-helpers-react';
 
 /**
  * NavigationBar Component
@@ -210,9 +209,6 @@ export default function NavigationBar() {
             ) : (
               /* Show Sign In button when not authenticated */
               <div className="flex items-center space-x-2">
-                <div className="hidden md:block text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
-                  Not signed in
-                </div>
                 <Link
                   href="/auth/sign-in"
                   className="px-4 py-2 bg-[#7a0019] text-white rounded-lg hover:bg-red-800 transition-colors text-sm font-medium"

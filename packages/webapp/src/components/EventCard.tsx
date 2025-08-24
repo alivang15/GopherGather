@@ -4,9 +4,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState, useRef } from "react";
 import { supabase } from '@/lib/supabase';
-import { EventCardProps } from '@/types';
+import { EventCardProps } from '@/types/index';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { to24h, addHours } from '@/lib/time';
 
 export default function EventCard({ event }: EventCardProps) {
   const [now, setNow] = useState<Date | null>(null);
@@ -26,6 +27,8 @@ export default function EventCard({ event }: EventCardProps) {
 
   useEffect(() => {
     setNow(new Date());
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
   }, []);
 
   useEffect(() => {
@@ -94,52 +97,25 @@ export default function EventCard({ event }: EventCardProps) {
    */
   const getEventStatus = () => {
     if (!event.date) return 'upcoming';
-    
-    if (!now) return 'upcoming'; // Wait for current time to be set
+    if (!now) return 'upcoming';
 
-    const currentYear = now.getFullYear();
-    const currentMonth = (now.getMonth() + 1).toString().padStart(2, '0');
-    const currentDay = now.getDate().toString().padStart(2, '0');
-    const currentDate = `${currentYear}-${currentMonth}-${currentDay}`;
-    const currentHour = now.getHours().toString().padStart(2, '0');
-    const currentMinute = now.getMinutes().toString().padStart(2, '0');
-    const currentTime = `${currentHour}:${currentMinute}:00`;
-    
-    // If event date is in the past
-    if (event.date < currentDate) return 'past';
-    
-    // If event date is in the future
-    if (event.date > currentDate) return 'upcoming';
-    
-    // If event is today, check time
-    if (event.date === currentDate) {
-      if (!event.start_time) return 'current'; // No time specified
-      
-      const eventStart = event.start_time.includes(':') 
-        ? (event.start_time.split(':').length === 2 ? `${event.start_time}:00` : event.start_time)
-        : event.start_time;
-      
-      if (event.end_time) {
-        // Has end time - check if event has ended
-        const eventEnd = event.end_time.includes(':') 
-          ? (event.end_time.split(':').length === 2 ? `${event.end_time}:00` : event.end_time)
-          : event.end_time;
-        
-        return (eventStart <= currentTime && eventEnd >= currentTime) ? 'current' : 
-               (eventEnd < currentTime) ? 'past' : 'upcoming';
-      } else {
-        // No end time - consider current for 2 hours after start
-        const startHour = parseInt(eventStart.split(':')[0]);
-        const startMinute = parseInt(eventStart.split(':')[1]);
-        const endHour = startHour + 2;
-        const endTime = `${endHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')}:00`;
-        
-        return (eventStart <= currentTime && endTime >= currentTime) ? 'current' : 
-               (endTime < currentTime) ? 'past' : 'upcoming';
-      }
+    const start = to24h(event.start_time);
+    const end = event.end_time ? to24h(event.end_time) : (start ? addHours(start, 2) : null);
+
+    // No times: day-only
+    if (!start && !end) {
+      const today = now.toISOString().slice(0, 10);
+      if (event.date < today) return 'past';
+      if (event.date > today) return 'upcoming';
+      return 'current';
     }
-    
-    return 'upcoming';
+
+    const startDT = start ? new Date(`${event.date}T${start}`) : new Date(`${event.date}T00:00:00`);
+    const endDT = end ? new Date(`${event.date}T${end}`) : new Date(`${event.date}T23:59:59`);
+
+    if (endDT < now) return 'past';
+    if (startDT > now) return 'upcoming';
+    return 'current';
   };
 
   const eventStatus = getEventStatus();
@@ -156,22 +132,13 @@ export default function EventCard({ event }: EventCardProps) {
   const displayLocation = event.location || 'Location TBA';
   const displayAudience = event.audience || 'Open to All';
 
-  // ONE LINE DESCRIPTION - Fixed character limit for consistency
+  // ONE-LINE DESCRIPTION
   const getDisplayDescription = () => {
-    if (!event.original_text) return 'Event description coming soon...';
-    
-    // Clean the text - remove line breaks and extra spaces
-    const cleanedText = event.original_text
-      .replace(/\n/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    
-    // Limit to exactly 80 characters for one line consistency
-    if (cleanedText.length > 80) {
-      return cleanedText.substring(0, 77) + '...';
-    }
-    
-    return cleanedText;
+    const rawText = event.description || event.original_text;
+    if (!rawText) return "Event description coming soon...";
+
+    const cleanedText = rawText.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    return cleanedText.length > 80 ? cleanedText.slice(0, 77) + "..." : cleanedText;
   };
 
   /**

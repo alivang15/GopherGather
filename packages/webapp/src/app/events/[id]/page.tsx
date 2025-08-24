@@ -77,7 +77,7 @@ export default function EventDetailPage() {
       if (navigator.share) {
         await navigator.share({
           title: event?.title || 'Event',
-          text: event?.original_text?.substring(0, 100) + '...',
+          text: (event?.description || event?.original_text)?.substring(0, 100) + '...',
           url: window.location.href,
         });
       } else {
@@ -318,12 +318,12 @@ export default function EventDetailPage() {
             </div>
 
             {/* Description */}
-            {event.original_text && (
+            {(event.description || event.original_text) && (
               <div className="border-t pt-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">About This Event</h2>
                 <div className="prose max-w-none">
                   <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {event.original_text}
+                    {event.description || event.original_text}
                   </p>
                 </div>
               </div>

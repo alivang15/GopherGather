@@ -204,7 +204,7 @@ export default function EventsWithFilters({ allEvents }: EventsWithFiltersProps)
                   }
                 `}>
                   {currentEvents.map((event) => (
-                    <div key={event.id} className="ring-2 ring-red-500 ring-opacity-50 rounded-lg w-full max-w-sm">
+                    <div key={event.id} className="rounded-lg w-full max-w-sm">
                       <EventCard event={event} />
                     </div>
                   ))}
@@ -215,30 +215,36 @@ export default function EventsWithFilters({ allEvents }: EventsWithFiltersProps)
             {/* Upcoming Events Section */}
             {upcomingEvents.length > 0 && (
               <div className="mb-12">
-                {currentEvents.length === 0 && upcomingEvents.length > 0 && (
-                  <div className="mb-8">
-                    <h2 className="bebas-neue-regular text-4xl text-[#7a0019] mb-6 text-center flex items-center justify-center">
-                      🎯 NEXT UP
-                    </h2>
-                    {/* FIXED: Use grid layout instead of max-width container */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="md:col-start-2 lg:col-start-2"> {/* Center the card in the grid */}
+                <h2 className="bebas-neue-regular text-4xl text-[#7a0019] mb-6 text-center flex items-center justify-center">
+                  🎯 NEXT UP
+                </h2>
+                {currentEvents.length === 0 ? (
+                  <>
+                    {/* Featured first upcoming when there are no current events */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                      <div className="md:col-start-2 lg:col-start-2">
                         <EventCard event={upcomingEvents[0]} />
                       </div>
                     </div>
-                  </div>
-                )}
-
-                {upcomingEvents.length > 1 && (
-                  <div>
-                    <h3 className="bebas-neue-regular text-xl text-[#7a0019] mb-6 text-center">
-                      All Upcoming Events
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {upcomingEvents.slice(1).map((event) => (
-                        <EventCard key={event.id} event={event} />
-                      ))}
-                    </div>
+                    {upcomingEvents.length > 1 && (
+                      <>
+                        <h3 className="bebas-neue-regular text-xl text-[#7a0019] mb-6 text-center">
+                          All Upcoming Events
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {upcomingEvents.slice(1).map((event) => (
+                            <EventCard key={event.id} event={event} />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  // When there are current events, just show all upcoming in a grid
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {upcomingEvents.map((event) => (
+                      <EventCard key={event.id} event={event} />
+                    ))}
                   </div>
                 )}
               </div>

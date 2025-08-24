@@ -7,14 +7,16 @@ export interface Event {
   title: string;
   deleted_at?: string;
   original_text?: string;
+  description?: string;
   date?: string;
   start_time?: string;
   end_time?: string;
   location?: string;
-  category: string;
   audience?: string;
-  post_url?: string;
+  category: string;
   image_url?: string;
+  post_url: string;
+  club_id?: string;
   status: string;
   created_at: string;
 }
@@ -23,6 +25,7 @@ export interface EventCardProps {
   event: {
     id: string;
     title: string;
+    description?: string;
     original_text?: string;
     date?: string;
     start_time?: string;

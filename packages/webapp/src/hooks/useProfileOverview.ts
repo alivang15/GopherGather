@@ -26,10 +26,54 @@ export function useProfileOverview() {
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const { data: res, error } = await supabase.rpc("get_profile_overview", { uid: user.id });
+
+    // Call RPC with the correct parameter name
+    const { data: res, error, status } = await supabase.rpc(
+      "get_profile_overview",
+      { input_user_id: user.id } // <- was { uid: user.id }
+    );
+
     if (error) {
-      console.error("get_profile_overview error:", error);
-      setData(null);
+      // Log useful info and fall back to direct queries so the UI still updates
+      console.warn("get_profile_overview error", {
+        status,
+        code: (error as any)?.code,
+        message: (error as any)?.message,
+      });
+
+      // Fallback: compute counts directly
+      const { startISO, endISO } = getThisWeekRange();
+      const [{ count: lifetime }, { count: weekly }, { count: vibeChecks }] =
+        await Promise.all([
+          supabase
+            .from("rsvps")
+            .select("id", { head: true, count: "exact" })
+            .eq("user_id", user.id)
+            .in("status", ["going", "attended"]),
+          supabase
+            .from("rsvps")
+            .select("id", { head: true, count: "exact" })
+            .eq("user_id", user.id)
+            .in("status", ["going", "attended"])
+            .gte("created_at", startISO)
+            .lt("created_at", endISO),
+          supabase
+            .from("vibe_checks")
+            .select("id", { head: true, count: "exact" })
+            .eq("user_id", user.id),
+        ]);
+
+      setData({
+        points: 0,
+        eventsAttended: lifetime ?? 0,
+        eventsAttendedThisWeek: weekly ?? 0,
+        photosShared: 0,
+        achievements: 0,
+        favorites: [],
+        activeRsvps: 0,
+        dayStreak: 0,
+        campusImpact: { vibe_checks: vibeChecks ?? 0 },
+      } as ProfileOverview);
     } else {
       // Weekly RSVPs (going) created this week
       const { startISO, endISO } = getThisWeekRange();
@@ -40,13 +84,15 @@ export function useProfileOverview() {
         .eq("status", "going")
         .gte("created_at", startISO)
         .lt("created_at", endISO);
+
       if (weekErr) console.warn("weekly RSVPs count error:", weekErr);
+
       setData({
         ...(res as ProfileOverview),
-        // prefer 0 when null/undefined
         eventsAttendedThisWeek: count ?? 0,
       } as ProfileOverview);
     }
+
     setLoading(false);
   };
 

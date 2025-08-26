@@ -19,31 +19,31 @@ A modern event discovery platform for the University of Minnesota community.
 
 ## Getting Started
 
-1. **Clone the repository**
+1. Clone the repository
    ```bash
    git clone https://github.com/your-username/umn-events.git
    cd umn-events
    ```
 
-2. **Install dependencies**
+2. Install dependencies
    ```bash
    cd packages/webapp
    npm install
    ```
 
-3. **Set up environment variables**
+3. Set up environment variables
    ```bash
    cp .env.example .env.local
    # Edit .env.local with your Supabase credentials
    ```
 
-4. **Run the development server**
+4. Run the development server
    ```bash
    npm run dev
    ```
 
-5. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+5. Open your browser  
+   Navigate to http://localhost:3000
 
 ## Project Structure
 
@@ -60,10 +60,10 @@ packages/webapp/
 
 ## Key Components
 
-- **NavigationBar**: Main navigation with logo and user actions
-- **FilterNavigation**: Category filtering for events
-- **EventCard**: Individual event display component
-- **EventsWithFilters**: Main events listing with filtering logic
+- NavigationBar: Main navigation with logo and user actions
+- FilterNavigation: Category filtering for events
+- EventCard: Individual event display component
+- EventsWithFilters: Main events listing with filtering logic
 
 ## Contributing
 

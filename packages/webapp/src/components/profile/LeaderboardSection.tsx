@@ -80,22 +80,26 @@ export default function LeaderboardSection() {
 
       const topGoers = topGoersP.error
         ? []
-        : ((topGoersP.data ?? []).map((g: any) => ({
-            user_id: g.user_id as string,
-            email: g.email ?? null,
-            first_name: g.first_name ?? null,
-            last_name: g.last_name ?? null,
-            going_count: Number(g.going_count ?? 0),
-            avatar_url: toPublicAvatar(g.avatar_url),
-          })) as TopGoer[]);
+        : (((topGoersP.data ?? []) as unknown[]).map((g) => {
+            const r = g as Record<string, unknown>;
+            return {
+              user_id: String(r.user_id ?? ""),
+              email: (r.email as string) ?? null,
+              first_name: (r.first_name as string) ?? null,
+              last_name: (r.last_name as string) ?? null,
+              going_count: Number(r.going_count ?? 0),
+              avatar_url: toPublicAvatar((r.avatar_url as string) ?? null),
+            } as TopGoer;
+          }) as TopGoer[]);
 
       const topEvents = trendingP.error ? [] : (((trendingP.data ?? []) as TopEvent[]));
 
       // Popular categories: compute relative percentages based on max count, take top 5
-      const rawCats = categoriesP.error ? [] : ((categoriesP.data as any[]) ?? []);
+      const rawCats = categoriesP.error ? [] : ((categoriesP.data ?? []) as unknown[]);
       const cleaned = rawCats
-        .filter((c) => c.category)
-        .map((c) => ({ category: String(c.category), count: Number(c.cnt ?? 0) }));
+        .map((c) => c as Record<string, unknown>)
+        .filter((rc) => typeof rc.category === "string")
+        .map((rc) => ({ category: String(rc.category), count: Number(rc.cnt ?? 0) }));
       const maxCount = Math.max(1, ...cleaned.map((c) => c.count));
       const popularCategories: PopularCategory[] = cleaned
         .map((c) => ({

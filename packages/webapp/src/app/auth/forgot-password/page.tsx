@@ -24,9 +24,16 @@ export default function ForgotPasswordPage() {
       await resetPassword(email);
       setEmailSent(true);
       setMessage('Check your email for a password reset link!');
-    } catch (err: any) {
+    } catch (err: unknown) {
+      // Safely extract message from unknown error
       console.error('Password reset error:', err);
-      setError(err.message || 'Failed to send reset email');
+      const msg =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'string'
+          ? err
+          : 'Failed to send reset email';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -78,7 +85,7 @@ export default function ForgotPasswordPage() {
               </h3>
               
               <p className="text-sm text-gray-600 mb-6">
-                We've sent a password reset link to <strong>{email}</strong>. 
+                We&apos;ve sent a password reset link to <strong>{email}</strong>. 
                 Check your email and click the link to reset your password.
               </p>
               
@@ -121,7 +128,7 @@ export default function ForgotPasswordPage() {
                     </h3>
                     <div className="mt-2 text-sm text-blue-700">
                       <p>
-                        Enter your email address and we'll send you a link to reset your password.
+                        Enter your email address and we&apos;ll send you a link to reset your password.
                       </p>
                     </div>
                   </div>
@@ -222,7 +229,7 @@ export default function ForgotPasswordPage() {
               {/* Help Links */}
               <div className="mt-6 text-center space-y-2">
                 <p className="text-sm text-gray-600">
-                  Don't have an account?{' '}
+                  Don&apos;t have an account?{' '}
                   <Link
                     href="/auth/sign-up"
                     className="font-medium text-[#7a0019] hover:text-red-800 underline"

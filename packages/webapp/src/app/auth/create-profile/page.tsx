@@ -6,11 +6,9 @@ import { Session } from '@supabase/auth-helpers-nextjs';
 
 export default function CreateProfilePage() {
   const [session, setSession] = useState<Session | null>(null);
-  const [username, setUsername] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
-  const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -33,17 +31,16 @@ export default function CreateProfilePage() {
       const { error: authError } = await supabase.auth.updateUser({
         password,
         data: {
-          username,
           first_name: firstName,
           last_name: lastName,
-          bio,
           // Add other fields here
         }
       });
       if (authError) throw authError;
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to update profile.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err ?? "Failed to update profile.");
+      setError(msg || 'Failed to update profile.');
     } finally {
       setLoading(false);
     }

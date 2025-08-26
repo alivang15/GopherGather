@@ -26,7 +26,7 @@ const audienceOptions = [
 ];
 
 export default function CreateEventPage() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
   const userType = useUserType();
   const isAdmin = userType === "admin" || userType === "club_admin";
   const router = useRouter();

@@ -54,7 +54,7 @@ export default function VibeCheckPanel({ eventId, eventTitle }: { eventId: strin
       .then(({ data }) => {
         setIsAdmin(data?.user_type === "admin" || data?.user_type === "club_admin");
       });
-  }, [user?.id]);
+  }, [user]);
 
   useEffect(() => {
     if (user) {

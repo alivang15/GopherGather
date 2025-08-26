@@ -143,9 +143,11 @@ export default function NavigationBar() {
                   >
                     <div className="w-8 h-8 md:w-10 md:h-10 bg-yellow-400 rounded-full flex items-center justify-center overflow-hidden">
                       {user?.user_metadata?.avatar_url ? (
-                        <img
+                        <Image
                           src={user.user_metadata.avatar_url}
                           alt="Profile"
+                          width={40}
+                          height={40}
                           className="w-full h-full object-cover rounded-full"
                         />
                       ) : (

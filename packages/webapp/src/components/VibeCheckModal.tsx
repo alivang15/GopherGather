@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from "next/link";
@@ -58,13 +58,7 @@ export default function VibeCheckModal({ eventId, eventTitle, isOpen, onClose }:
     }
   }, [user]);
 
-  useEffect(() => {
-    if (isOpen && eventId) {
-      fetchVibeChecks();
-    }
-  }, [isOpen, eventId]);
-
-  const fetchVibeChecks = async () => {
+  const fetchVibeChecks = useCallback(async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -85,7 +79,13 @@ export default function VibeCheckModal({ eventId, eventTitle, isOpen, onClose }:
     } finally {
       setLoading(false);
     }
-  };
+  }, [eventId]);
+
+  useEffect(() => {
+    if (isOpen && eventId) {
+      fetchVibeChecks();
+    }
+  }, [isOpen, fetchVibeChecks, eventId]);
 
   const submitVibeCheck = async () => {
     if (!user) {
@@ -143,8 +143,9 @@ export default function VibeCheckModal({ eventId, eventTitle, isOpen, onClose }:
       if (error) throw error;
      // Remove from UI list
      setVibeChecks((prev) => prev.filter((vc) => vc.id !== checkId));
-    } catch (e: any) {
-      alert(`Failed to delete comment: ${e?.message ?? "Unknown error"}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err ?? "Unknown error");
+      alert(`Failed to delete comment: ${msg}`);
     } finally {
       setDeletingId(null);
     }
@@ -225,6 +226,7 @@ export default function VibeCheckModal({ eventId, eventTitle, isOpen, onClose }:
         <div className="flex justify-between items-center mb-6 flex-shrink-0">
           <h2 className="text-2xl font-bold text-purple-600">
             <span className="mr-2">✨ Vibe Check</span>
+            {eventTitle && <span className="text-sm text-gray-600 ml-2">{eventTitle}</span>}
           </h2>
           <button
             onClick={onClose}
@@ -350,7 +352,7 @@ export default function VibeCheckModal({ eventId, eventTitle, isOpen, onClose }:
                         {/* Vibe Rating */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            How's the vibe?
+                            How&apos;s the vibe?
                           </label>
                           <div className="grid grid-cols-5 gap-2">
                             {VIBE_OPTIONS.map(vibe => (

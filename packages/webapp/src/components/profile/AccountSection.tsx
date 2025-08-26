@@ -19,7 +19,7 @@ export default function AccountSection({ user, onAvatarChange, uploading, fileIn
       (full && full.trim()) ||
       (user.email ? user.email.split("@")[0] : "");
     setDisplayName(initial || "");
-  }, [user?.id, isDirty]);
+  }, [user, isDirty]);
 
   // Reset dirty flag when the signed-in user changes
   useEffect(() => {
@@ -34,8 +34,9 @@ export default function AccountSection({ user, onAvatarChange, uploading, fileIn
     try {
       await resetPassword(user.email);
       alert("Password reset email sent. Check your inbox.");
-    } catch (e: any) {
-      alert(`Failed to send reset email: ${e?.message ?? "Unknown error"}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e ?? "Unknown error");
+      alert(`Failed to send reset email: ${msg}`);
     }
   };
 
@@ -54,9 +55,10 @@ export default function AccountSection({ user, onAvatarChange, uploading, fileIn
       // Optional: if your AuthContext exposes refreshUser, call it here to propagate without reload.
       // await refreshUser?.();
       setIsDirty(false);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("update display name failed:", e);
-      alert(`Failed to update display name: ${e?.message ?? "Unknown error"}`);
+      const msg = e instanceof Error ? e.message : String(e ?? "Unknown error");
+      alert(`Failed to update display name: ${msg}`);
     } finally {
       setSaving(false);
     }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 export default function ResetPasswordPage() {
@@ -17,7 +17,6 @@ export default function ResetPasswordPage() {
   const [hasValidSession, setHasValidSession] = useState(false);
   
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     const validateResetSession = async () => {
@@ -131,9 +130,11 @@ export default function ResetPasswordPage() {
         router.push('/auth/sign-in?message=Password updated successfully. Please sign in with your new password.');
       }, 3000);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
+      // Log and extract a safe message from unknown error
       console.error('Password update error:', err);
-      setError(err.message || 'Failed to update password');
+      const msg = err instanceof Error ? err.message : String(err ?? 'Failed to update password');
+      setError(msg);
     } finally {
       setLoading(false);
     }

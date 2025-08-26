@@ -1,11 +1,8 @@
 "use client";
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
-import { Session } from '@supabase/auth-helpers-nextjs';
 
 export default function EmailSignUpPage() {
   const [email, setEmail] = useState('');
@@ -66,8 +63,9 @@ export default function EmailSignUpPage() {
         return;
       }
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to send confirmation email.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err ?? 'Failed to send confirmation email.');
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -86,7 +84,7 @@ export default function EmailSignUpPage() {
               </div>
               <h2 className="mt-6 text-2xl font-bold text-gray-900">Check your email</h2>
               <p className="mt-2 text-sm text-gray-600">
-                We've sent a confirmation link to <span className="font-medium">{email}</span>. Click it to continue creating your account.
+                We&apos;ve sent a confirmation link to <span className="font-medium">{email}</span>. Click it to continue creating your account.
               </p>
               <div className="mt-6 text-center text-sm text-gray-600">
                 If you do not receive one, it means that you may have clicked on the confirmation link. Please reset password with the email address that you used to sign up.

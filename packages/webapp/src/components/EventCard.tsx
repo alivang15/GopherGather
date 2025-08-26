@@ -1,7 +1,7 @@
 "use client";
 
 import Image from 'next/image';
-import Link from 'next/link';
+import type { PostgrestError } from '@supabase/supabase-js';
 import { useEffect, useState, useRef } from "react";
 import { supabase } from '@/lib/supabase';
 import { EventCardProps } from '@/types/index';
@@ -208,7 +208,7 @@ export default function EventCard({ event }: EventCardProps) {
       return;
     }
 
-    let error: any = null;
+    let error: PostgrestError | null = null;
 
     if (!existing) {
       // No RSVP yet -> insert

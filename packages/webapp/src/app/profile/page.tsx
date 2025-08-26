@@ -22,14 +22,10 @@ export default function ProfilePage() {
   const param = searchParams?.get("section") ?? "account";
   const initial = VALID_SECTIONS.includes(param as Section) ? (param as Section) : "account";
 
-  const [profile, setProfile] = useState<any>(null);
   const [selected, setSelected] = useState<Section>(initial);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
 
-  useEffect(() => {
-    setProfile(user ?? null);
-  }, [user]);
 
   useEffect(() => {
     const s = searchParams?.get("section") ?? "account";
@@ -97,18 +93,13 @@ export default function ProfilePage() {
         return;
       }
 
-      // 4) Update local state and refresh
-      setProfile((prev: any) => ({
-        ...prev,
-        user_metadata: { ...prev?.user_metadata, avatar_url: cacheBustedUrl },
-      }));
+      // 4) No local profile state to update here; refresh so UI picks up new avatar
       setAvatarUploading(false);
       window.location.reload();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Unexpected avatar error:', err);
-      alert(
-        `Failed to upload avatar. Supabase may not be set up yet.\n\nDetails: ${err?.message ?? 'Unknown error'}`
-      );
+      const msg = err instanceof Error ? err.message : String(err ?? 'Unknown error');
+      alert(`Failed to upload avatar. Supabase may not be set up yet.\n\nDetails: ${msg}`);
       setAvatarUploading(false);
     }
   };

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import type { ProfileOverview } from "@/types";
+import type { PostgrestError } from "@supabase/supabase-js";
 
 export function useProfileOverview() {
   const { user } = useAuth();
@@ -23,7 +24,7 @@ export function useProfileOverview() {
     return { startISO: start.toISOString(), endISO: end.toISOString() };
   }
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
 
@@ -35,10 +36,11 @@ export function useProfileOverview() {
 
     if (error) {
       // Log useful info and fall back to direct queries so the UI still updates
+      const pgErr = error as PostgrestError | null;
       console.warn("get_profile_overview error", {
         status,
-        code: (error as any)?.code,
-        message: (error as any)?.message,
+        code: pgErr?.code ?? null,
+        message: pgErr?.message ?? null,
       });
 
       // Fallback: compute counts directly
@@ -94,11 +96,11 @@ export function useProfileOverview() {
     }
 
     setLoading(false);
-  };
+  }, [user]);
 
   useEffect(() => {
     if (user) void load();
-  }, [user]);
+  }, [user, load]);
 
   return { data, loading, reload: load };
 }

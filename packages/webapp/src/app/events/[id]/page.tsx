@@ -4,9 +4,8 @@ import { useUserType } from "@/hooks/useUserType";
 import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import type { Event } from "@/types";
 import { sanitizeInput } from "@/utils/sanitize";
 
@@ -35,7 +34,6 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     async function fetchEvent() {
@@ -73,15 +71,6 @@ export default function EventDetailPage() {
 
     if (id) fetchEvent();
   }, [id]);
-
-  // (Optional old behavior) auto-open modal after auth redirect
-  const [vibeCheckOpen, setVibeCheckOpen] = useState(false);
-
-  useEffect(() => {
-    const shouldOpenVibeCheck = searchParams?.get('open_vibe_check') === 'true';
-    const eventIdFromUrl = searchParams?.get('event_id');
-    if (shouldOpenVibeCheck && eventIdFromUrl === id) setVibeCheckOpen(true);
-  }, [searchParams, id]);
 
   const handleShare = async () => {
     try {
@@ -140,7 +129,7 @@ export default function EventDetailPage() {
           <h1 className="text-6xl font-bold text-gray-900 mb-4">404</h1>
           <h2 className="text-2xl font-semibold text-gray-700 mb-4">Event Not Found</h2>
           <p className="text-gray-600 mb-8">
-            The event you're looking for doesn't exist or has been removed.
+            The event you&apos;re looking for doesn&apos;t exist or has been removed.
           </p>
           <Link 
             href="/"

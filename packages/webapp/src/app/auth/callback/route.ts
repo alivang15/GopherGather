@@ -30,12 +30,18 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      console.log('✅ Email confirmed successfully');
       return NextResponse.redirect(
         `${requestUrl.origin}/auth/sign-in?message=${encodeURIComponent('Email confirmed! You can now sign in.')}`
       );
-    } catch (err: any) {
-      console.error('❌ Unexpected error:', err);
+    } catch (err: unknown) {
+      // Log safely and return a generic redirect message
+      console.error('❌ Unexpected error in auth callback:', err);
+      try {
+        const details = err instanceof Error ? err.message : JSON.stringify(err);
+        console.error('❌ Unexpected error details:', details);
+      } catch {
+        // ignore JSON errors
+      }
       return NextResponse.redirect(
         `${requestUrl.origin}/auth/sign-in?error=${encodeURIComponent('Account confirmation failed')}`
       );

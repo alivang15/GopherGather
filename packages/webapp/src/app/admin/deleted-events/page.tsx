@@ -2,9 +2,15 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Event } from "@/types";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
+
+type EventWithDelete = Event & {
+  deleted_at: string | null;
+  permanently_deleted_at: string | null;
+};
 
 export default function DeletedEventsPage() {
-  const [deletedEvents, setDeletedEvents] = useState<Event[]>([]);
+  const [deletedEvents, setDeletedEvents] = useState<EventWithDelete[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [pending, setPending] = useState<Record<string, "restore" | "delete" | undefined>>({});
@@ -18,56 +24,60 @@ export default function DeletedEventsPage() {
         .select("*")
         .not("deleted_at", "is", null)
         .is("permanently_deleted_at", null);
+
       if (error) {
         setError("Failed to load deleted events: " + error.message);
         setDeletedEvents([]);
       } else {
-        setDeletedEvents(data || []);
+        setDeletedEvents((data as EventWithDelete[]) || []);
       }
       setLoading(false);
     }
     fetchDeletedEvents();
 
-    // Realtime: if another admin permanently deletes/restores, keep list in sync
     const channel = supabase
       .channel("deleted-events-sync")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "events" }, (payload: any) => {
-        const row = payload.new;
-        if (!row) return;
-        // Remove if it just became permanently deleted or restored (deleted_at null)
-        if (row.permanently_deleted_at || row.deleted_at === null) {
-          setDeletedEvents((prev) => prev.filter((e) => e.id !== row.id));
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "events" },
+        (payload: RealtimePostgresChangesPayload<EventWithDelete>) => {
+          const row = (payload.new as EventWithDelete | null) ?? null;
+          if (!row) return;
+          if (row.permanently_deleted_at || row.deleted_at === null) {
+            setDeletedEvents((prev) => prev.filter((e) => e.id !== row.id));
+          }
         }
-      })
+      )
       .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
     };
   }, []);
 
-  // .eq("permanently_deleted_at", null); up there
   const handleRestore = async (id: string) => {
     setError("");
     setPending((p) => ({ ...p, [id]: "restore" }));
     try {
-     // Prefer admin RPC if present (bypasses RLS and enforces admin)
-     const { error } =
-       (await supabase.rpc("admin_restore_event", { p_event_id: id })).error
-         ? await supabase.rpc("admin_restore_event", { p_event_id: id }) // retry once
-         : { error: null as any };
-     // Fallback to direct update if RPC not available (optional)
-     if (error?.message?.includes("function admin_restore_event")) {
-       const fallback = await supabase.from("events").update({ deleted_at: null, permanently_deleted_at: null }).eq("id", id);
-       if (fallback.error) throw fallback.error;
-     } else if (error) {
-       throw error;
-     }
+     // Prefer admin RPC if present (bypasses RLS and enforces admin). Retry once if it fails.
+     const first = await supabase.rpc("admin_restore_event", { p_event_id: id });
+     const { error } = first.error
+       ? await supabase.rpc("admin_restore_event", { p_event_id: id })
+       : first;
+      // Fallback to direct update if RPC not available (optional)
+      if (error?.message?.includes("function admin_restore_event")) {
+        const fallback = await supabase.from("events").update({ deleted_at: null, permanently_deleted_at: null }).eq("id", id);
+        if (fallback.error) throw fallback.error;
+      } else if (error) {
+        throw error;
+      }
       // Remove from list immediately
       setDeletedEvents((prev) => prev.filter((e) => e.id !== id));
-    } catch (e: any) {
-      setError("Failed to restore event: " + (e?.message || "Unknown error"));
+    } catch (e: unknown) {
+      const msg = typeof e === "object" && e && "message" in e ? String((e as { message?: string }).message) : "Unknown error";
+      setError("Failed to restore event: " + msg);
     } finally {
-     setPending((p) => ({ ...p, [id]: undefined }));
+      setPending((p) => ({ ...p, [id]: undefined }));
     }
   };
 
@@ -79,9 +89,9 @@ export default function DeletedEventsPage() {
     setDeletedEvents((prev) => prev.filter((e) => e.id !== id));
     try {
       const { error } = await supabase.rpc("admin_permanently_delete_event", { p_event_id: id });
-     if (error) {
-       console.error("admin_permanently_delete_event error:", error);
-     }
+      if (error) {
+        console.error("admin_permanently_delete_event error:", error);
+      }
       if (error?.message?.includes("not_eligible")) {
         throw new Error("This event cannot be permanently deleted yet (30-day rule).");
       }
@@ -97,10 +107,11 @@ export default function DeletedEventsPage() {
       } else if (error) {
         throw error;
       }
-    } catch (e: any) {
-     console.error("Permanent delete failed:", e);
+    } catch (e: unknown) {
+      console.error("Permanent delete failed:", e);
       await refetchDeletedEvents();
-      setError("Failed to permanently delete event: " + (e?.message || "Unknown error"));
+      const msg = typeof e === "object" && e && "message" in e ? String((e as { message?: string }).message) : "Unknown error";
+      setError("Failed to permanently delete event: " + msg);
     } finally {
       setPending((p) => ({ ...p, [id]: undefined }));
     }
@@ -113,7 +124,7 @@ export default function DeletedEventsPage() {
      .select("*")
      .not("deleted_at", "is", null)
      .is("permanently_deleted_at", null);
-   setDeletedEvents(data || []);
+   setDeletedEvents((data as EventWithDelete[]) || []);
  }
 
   if (loading) return <div>Loading...</div>;

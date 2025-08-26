@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { useUserType } from "@/hooks/useUserType";
 import type { Event } from "@/types";
 import { sanitizeInput } from "@/utils/sanitize";
 
@@ -12,7 +11,6 @@ export default function EditEventPage() {
     const params = useParams<{ id: string }>();
     const id = params?.id;
     const router = useRouter();
-    const userType = useUserType();
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");

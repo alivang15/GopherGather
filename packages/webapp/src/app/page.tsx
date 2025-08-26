@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import EventsWithFilters from '@/components/EventsWithFilters';
 import { supabase } from '@/lib/supabase';
+import type { Event } from '@/types';
 
 async function getEvents() {
   try {
@@ -11,15 +12,16 @@ async function getEvents() {
       .order('date', { ascending: true });
 
     if (error) {
-      // print more diagnostic info — JSON.stringify may miss non-enumerable props so include name/message/status
-      console.error('Supabase error:', {
-        name: (error as any)?.name,
-        message: (error as any)?.message,
+      // safe extraction without using `any`
+      const errFields = {
+        name: (error as { name?: string })?.name,
+        message: (error as { message?: string })?.message,
         status,
-        raw: JSON.stringify(error, Object.getOwnPropertyNames(error)),
-      });
+        raw: JSON.stringify(error ?? {}, Object.getOwnPropertyNames(error ?? {})),
+      };
 
-      // dev-only: check whether env is present (don't log secrets in prod)
+      console.error('Supabase error:', errFields);
+
       if (process.env.NODE_ENV !== 'production') {
         console.log('NEXT_PUBLIC_SUPABASE_URL present?', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
         console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY present?', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
@@ -28,7 +30,7 @@ async function getEvents() {
       return [];
     }
 
-    return events || [];
+    return (events as Event[]) || [];
   } catch (err) {
     console.error('Unexpected error fetching events:', err);
     return [];
@@ -36,7 +38,7 @@ async function getEvents() {
 }
 
 // Wrapper component to handle search params
-function EventsWrapper({ events }: { events: any[] }) {
+function EventsWrapper({ events }: { events: Event[] }) {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-white flex items-center justify-center">

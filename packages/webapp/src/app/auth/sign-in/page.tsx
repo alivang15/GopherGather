@@ -16,7 +16,7 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   
-  const { signIn, user } = useAuth(); // ✅ Add user to check auth status
+  const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams?.get('redirect') || '/';
@@ -40,11 +40,10 @@ export default function SignInPage() {
     setError('');
 
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-
       if (signInError) {
         // Show a generic error message for invalid credentials
         setError('Either your email or password is wrong.');
@@ -61,7 +60,7 @@ export default function SignInPage() {
       }
       
       router.refresh();
-    } catch (err) {
+    } catch {
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -118,7 +117,7 @@ export default function SignInPage() {
                     Vibe Check Authentication
                   </h3>
                   <p className="text-xs text-purple-600 mt-1">
-                    After signing in, you'll return to the event to share your vibe check
+                    After signing in, you&apos;ll return to the event to share your vibe check
                   </p>
                 </div>
               </div>

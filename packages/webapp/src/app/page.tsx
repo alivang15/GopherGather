@@ -3,6 +3,8 @@ import EventsWithFilters from '@/components/EventsWithFilters';
 import { supabase } from '@/lib/supabase';
 import type { Event } from '@/types';
 
+export const dynamic = "force-dynamic";
+
 async function getEvents() {
   try {
     const { data: events, error, status } = await supabase

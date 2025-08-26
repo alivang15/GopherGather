@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +14,14 @@ const VALID_SECTIONS = ["account", "profile", "leaderboard", "notifications"] as
 type Section = (typeof VALID_SECTIONS)[number];
 
 export default function ProfilePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading…</div>}>
+      <ProfilePageContent />
+    </Suspense>
+  );
+}
+
+function ProfilePageContent() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();

@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useUserType } from "@/hooks/useUserType";
 import type { Event } from "@/types";
+import { sanitizeInput } from "@/utils/sanitize";
 
 
 export default function EditEventPage() {
@@ -69,6 +70,25 @@ export default function EditEventPage() {
         let uploadedImageUrl = event?.image_url || "";
 
         if (imageFile) {
+            const allowedTypes = [
+                "image/png",
+                "image/jpeg",
+                "image/jpg",
+            ];
+            const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+            if (!allowedTypes.includes(imageFile.type)) {
+                setError("Invalid file type. Please upload a PNG, JPEG, or JPG image.");
+                setSubmitting(false);
+                return;
+            }
+
+            if (imageFile.size > MAX_FILE_SIZE) {
+                setError("File size exceeds the 5MB limit.");
+                setSubmitting(false);
+                return;
+            }
+
             const fileExt = imageFile.name.split('.').pop();
             const filePath = `events/${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
             const { error: uploadError } = await supabase.storage
@@ -83,18 +103,40 @@ export default function EditEventPage() {
             uploadedImageUrl = data.publicUrl;
         }
 
+        const sanitized = {
+            title: sanitizeInput(title),
+            description: sanitizeInput(description),
+            location: sanitizeInput(location),
+            category: sanitizeInput(category),
+            audience: sanitizeInput(audience),
+            postUrl: sanitizeInput(postUrl),
+        };
+
+        if (
+            sanitized.title !== title ||
+            sanitized.description !== description ||
+            sanitized.location !== location ||
+            sanitized.category !== category ||
+            sanitized.audience !== audience ||
+            sanitized.postUrl !== postUrl
+        ) {
+            setError("Invalid input detected.");
+            setSubmitting(false);
+            return;
+        }
+
         const { error: updateError } = await supabase
             .from("events")
             .update({
-                title,
-                description,
+                title: sanitized.title,
+                description: sanitized.description,
                 date: date || null,
                 start_time: startTime || null,
                 end_time: endTime || null,
-                location: location || null,
-                category,
-                audience: audience || null,
-                post_url: postUrl || null,
+                location: sanitized.location || null,
+                category: sanitized.category,
+                audience: sanitized.audience || null,
+                post_url: sanitized.postUrl || null,
                 image_url: uploadedImageUrl || null,
             })
             .eq("id", id);

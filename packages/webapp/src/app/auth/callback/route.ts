@@ -11,7 +11,6 @@ export async function GET(request: NextRequest) {
   console.log('🔄 Auth callback route handler:', { code: !!code, error_code });
 
   if (error_code) {
-    console.error('❌ Auth callback error:', error_code, error_description);
     return NextResponse.redirect(
       `${requestUrl.origin}/auth/sign-in?error=${encodeURIComponent(error_description || 'Authentication failed')}`
     );

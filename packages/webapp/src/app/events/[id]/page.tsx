@@ -8,6 +8,7 @@ import { notFound } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import type { Event } from "@/types";
+import { sanitizeInput } from "@/utils/sanitize";
 
 // Helper functions
 function formatDate(dateStr: string) {
@@ -46,12 +47,22 @@ export default function EventDetailPage() {
           .eq('status', 'approved')
           .single();
 
-        if (fetchError) {
-          console.error('Error fetching event:', fetchError);
-          setError(true);
-        } else {
-          setEvent(eventData);
-        }
+          if (fetchError) {
+            console.error('Error fetching event:', fetchError);
+            setError(true);
+          } else {
+            const sanitized = {
+              ...eventData,
+              title: sanitizeInput(eventData.title || ""),
+              description: sanitizeInput(eventData.description || ""),
+              original_text: sanitizeInput(eventData.original_text || ""),
+              location: sanitizeInput(eventData.location || ""),
+              category: sanitizeInput(eventData.category || ""),
+              audience: sanitizeInput(eventData.audience || ""),
+              post_url: sanitizeInput(eventData.post_url || ""),
+            } as Event;
+            setEvent(sanitized);
+          }
       } catch (err) {
         console.error('Error:', err);
         setError(true);
@@ -76,8 +87,8 @@ export default function EventDetailPage() {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: event?.title || 'Event',
-          text: (event?.description || event?.original_text)?.substring(0, 100) + '...',
+          title: event?.title ?? 'Event',
+          text: ((event?.description ?? event?.original_text) ?? '').substring(0, 100) + '...',
           url: window.location.href,
         });
       } else {
@@ -85,7 +96,9 @@ export default function EventDetailPage() {
         alert('Event link copied to clipboard!');
       }
     } catch (error) {
-      console.log('Share cancelled or failed:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Share cancelled or failed:', error);
+      }
     }
   };
 
@@ -159,7 +172,7 @@ export default function EventDetailPage() {
             </svg>
             Back to Events
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900">{event.title}</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{sanitizeInput(event.title ?? "")}</h1>
           {isUpcoming && (
             <span className="inline-block bg-green-100 text-green-800 text-sm font-semibold px-3 py-1 rounded-full mt-2">
               Upcoming Event
@@ -176,7 +189,7 @@ export default function EventDetailPage() {
             <div className="relative h-64 md:h-96 w-full">
               <Image
                 src={event.image_url}
-                alt={event.title}
+                alt={sanitizeInput(event.title ?? "")}
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
@@ -200,7 +213,7 @@ export default function EventDetailPage() {
                         <svg className="w-5 h-5 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        <span className="font-medium">{formatDate(event.date)}</span>
+                        <span className="font-medium">{formatDate(event.date ?? "")}</span>
                       </div>
                     )}
 
@@ -211,8 +224,8 @@ export default function EventDetailPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span className="font-medium">
-                          {formatTime(event.start_time)}
-                          {event.end_time && ` - ${formatTime(event.end_time)}`}
+                          {formatTime(event.start_time ?? "")}
+                          {event.end_time && ` - ${formatTime(event.end_time ?? "")}`}
                         </span>
                       </div>
                     )}
@@ -224,7 +237,7 @@ export default function EventDetailPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        <span className="font-medium">{event.location}</span>
+                        <span className="font-medium">{sanitizeInput(event.location ?? "")}</span>
                       </div>
                     )}
 
@@ -234,14 +247,14 @@ export default function EventDetailPage() {
                         <svg className="w-5 h-5 mr-3 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
-                        <span className="font-medium">{event.audience}</span>
+                        <span className="font-medium">{sanitizeInput(event.audience)}</span>
                       </div>
                     )}
 
                     {/* Category */}
                     <div className="flex items-center">
                       <span className="inline-block bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
-                        {event.category}
+                        {sanitizeInput(event.category ?? "")}
                       </span>
                     </div>
                   </div>
@@ -323,7 +336,7 @@ export default function EventDetailPage() {
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">About This Event</h2>
                 <div className="prose max-w-none">
                   <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {event.description || event.original_text}
+                    {sanitizeInput((event.description ?? event.original_text) ?? "")}
                   </p>
                 </div>
               </div>

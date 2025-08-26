@@ -8,6 +8,7 @@ import { EventCardProps } from '@/types/index';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { to24h, addHours } from '@/lib/time';
+import { sanitizeInput } from "@/utils/sanitize";
 
 export default function EventCard({ event }: EventCardProps) {
   const [now, setNow] = useState<Date | null>(null);
@@ -126,19 +127,22 @@ export default function EventCard({ event }: EventCardProps) {
 
   // Default values for consistent display
   const displayDate = event.date ? formatDate(event.date) : 'Date TBA';
-  const displayTime = event.start_time 
+  const displayTime = event.start_time
     ? `${formatTime(event.start_time)}${event.end_time ? ` - ${formatTime(event.end_time)}` : ''}`
     : 'Time TBA';
-  const displayLocation = event.location || 'Location TBA';
-  const displayAudience = event.audience || 'Open to All';
+  const displayLocation = sanitizeInput(event.location || 'Location TBA');
+  const displayAudience = sanitizeInput(event.audience || 'Open to All');
+  const sanitizedTitle = sanitizeInput(event.title);
+  const sanitizedCategory = sanitizeInput(event.category);
+  const sanitizedClubName = sanitizeInput(clubName || "");
 
   // ONE-LINE DESCRIPTION
   const getDisplayDescription = () => {
     const rawText = event.description || event.original_text;
     if (!rawText) return "Event description coming soon...";
 
-    const cleanedText = rawText.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-    return cleanedText.length > 80 ? cleanedText.slice(0, 77) + "..." : cleanedText;
+    const cleaned = sanitizeInput(rawText).replace(/\s+/g, " ").trim();
+    return cleaned.length > 80 ? cleaned.slice(0, 77) + "..." : cleaned;
   };
 
   /**
@@ -245,7 +249,7 @@ export default function EventCard({ event }: EventCardProps) {
       <div className="relative h-48 w-full overflow-hidden">
         <Image
           src={imageUrl}
-          alt={event.title || 'Event image'}
+          alt={sanitizedTitle || 'Event image'}
           fill
           className="object-cover transition-transform duration-500 ease-out group-hover:scale-110"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -269,7 +273,7 @@ export default function EventCard({ event }: EventCardProps) {
       <div className="p-4">
         <div className="flex justify-between items-start mb-3">
           <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 flex-1 transition-colors duration-200 group-hover:text-[]">
-            {event.title}
+            {sanitizedTitle}
           </h3>
           <div className="transform transition-all duration-200 group-hover:scale-110 ml-2">
             {getStatusBadge()}
@@ -325,7 +329,7 @@ export default function EventCard({ event }: EventCardProps) {
           </div>
         </div>
         {/* Club Name */}
-        {clubName && (
+        {sanitizedClubName && (
           <div className="flex items-center gap-2 text-gray-700 mt-3 transition-all duration-200 group-hover:text-gray-800 group-hover:translate-x-1">
             <svg
               className="w-5 h-5 text-gray-600 transition-transform duration-200 group-hover:scale-110 flex-shrink-0"
@@ -345,14 +349,14 @@ export default function EventCard({ event }: EventCardProps) {
               <circle cx="24" cy="24" r="4" />
               <path d="M8 36l-4 6h40l-4-6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span className="font-medium">{clubName}</span>
+            <span className="font-medium">{sanitizedClubName}</span>
           </div>
         )}
 
         {/* Category Badge and Read More */}
         <div className="flex justify-between items-center mt-4">
           <span className="inline-block bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded transition-all duration-200 group-hover:bg-blue-200 group-hover:scale-105">
-            {event.category}
+            {sanitizedCategory}
           </span>
           {/* Only this triggers navigation */}
           <span

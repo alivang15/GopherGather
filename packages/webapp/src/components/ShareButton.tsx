@@ -17,7 +17,9 @@ export default function ShareButton({ title, text, url }: ShareButtonProps) {
         });
       } catch (error) {
         // User cancelled sharing
-        console.log('Share cancelled');
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('Share cancelled');
+        }
       }
     } else {
       // Fallback for browsers that don't support Web Share API

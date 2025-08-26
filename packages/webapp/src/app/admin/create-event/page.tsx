@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserType } from "@/hooks/useUserType";
+import { sanitizeInput } from "@/utils/sanitize";
 
 const categoryOptions = [
   "Academic",
@@ -27,7 +28,6 @@ const audienceOptions = [
 export default function CreateEventPage() {
   const { user, loading } = useAuth();
   const userType = useUserType();
-  console.log("DEBUG userType:", userType);
   const isAdmin = userType === "admin" || userType === "club_admin";
   const router = useRouter();
 
@@ -99,9 +99,26 @@ export default function CreateEventPage() {
 
       let uploadedImageUrl = "";
       if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop();
+        const allowedTypes = [
+          "image/png",
+          "image/jpeg",
+          "image/jpg",
+        ];
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+        if (!allowedTypes.includes(imageFile.type)) {
+          setError("Invalid file type. Please upload a PNG, JPEG, or JPG image."); 
+          setSubmitting(false);
+          return;
+        }
+
+        if (imageFile.size > MAX_FILE_SIZE) {
+          setError("File size exceeds the 5MB limit.");
+          return;
+        }
+
+        const fileExt = imageFile.name.split(".").pop();
         const filePath = `events/${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-        console.log("Uploading file:", imageFile, "to path:", filePath);
 
         const { error: uploadError } = await supabase.storage
           .from("event-images")
@@ -118,27 +135,55 @@ export default function CreateEventPage() {
         uploadedImageUrl = data.publicUrl;
       }
 
-      const { error } = await supabase.from("events").insert([
-        {
-          title,
-          description,
+      const sanitized = {
+        title: sanitizeInput(title),
+        description: sanitizeInput(description),
+        location: sanitizeInput(location),
+        category: sanitizeInput(category),
+        audience: sanitizeInput(audience),
+        postUrl: sanitizeInput(postUrl),
+      };
+
+      if (
+        sanitized.title !== title ||
+        sanitized.description !== description ||
+        sanitized.location !== location ||
+        sanitized.category !== category ||
+        sanitized.audience !== audience ||
+        sanitized.postUrl !== postUrl
+      ) {
+        setError("Invalid input detected.");
+        setSubmitting(false);
+        return;
+      }
+
+      const response = await fetch("/api/events/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": user?.id || "",
+        },
+        body: JSON.stringify({
+          title: sanitized.title,
+          description: sanitized.description,
           date: date || null,
           start_time: startTime || null,
           end_time: endTime || null,
-          location: location || null,
-          category,
-          audience: audience || null,
-          post_url: postUrl || null,
+          location: sanitized.location || null,
+          category: sanitized.category,
+          audience: sanitized.audience || null,
+          post_url: sanitized.postUrl || null,
           image_url: uploadedImageUrl || null,
           status: "approved",
           club_id: orgIdToUse,
           created_by: user?.id,
-        },
-      ]);
+        }),
+    });
 
-      if (error) {
+      if (!response.ok) {
+        const { error } = await response.json();
         console.error("Error creating event:", error);
-        setError("Failed to create event. Please try again.");
+        setError(error || "Failed to create event. Please try again.");
       } else {
         setSuccess(true);
         setTitle("");

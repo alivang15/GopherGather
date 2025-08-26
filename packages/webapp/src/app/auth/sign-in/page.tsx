@@ -30,7 +30,6 @@ export default function SignInPage() {
   useEffect(() => {
     if (user && isVibeCheckFlow && redirectTo !== '/') {
       // User is now authenticated and came from vibe check modal
-      console.log('🎯 Redirecting back to event with vibe check context');
       router.push(`${redirectTo}?open_vibe_check=true&event_id=${eventId}`);
     }
   }, [user, isVibeCheckFlow, redirectTo, eventId, router]);

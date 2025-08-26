@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { sanitizeInput } from "@/utils/sanitize";
 
 export default function CreateEventPage() {
     const { user } = useAuth();
@@ -16,18 +17,18 @@ export default function CreateEventPage() {
     useEffect(() => {
 
         const fetchUserType = async () => {
-            console.log("Current user object:", user);
             if (user?.id) {
                 const { data, error } = await supabase
                     .from('users')
                     .select('user_type')
                     .eq('id', user.id)
                     .single();
-                console.log("user fetch result", { data, error, userId: user.id });
                 setUserType(data?.user_type ?? null);
                 // setClubId(data?.club_id ?? null);
             } else {
-                console.log("No user.id yet", user);
+                if (process.env.NODE_ENV !== 'production') {
+                    console.log("No user.id yet", user);
+                }
             }
         };
         fetchUserType();
@@ -92,17 +93,44 @@ export default function CreateEventPage() {
             return;
         }
 
-        const { error } = await supabase.from("events").insert([
-            {
-                ...form,
+        const sanitized = {
+            title: sanitizeInput(form.title),
+            date: form.date,
+            start_time: form.start_time,
+            end_time: form.end_time,
+            location: sanitizeInput(form.location),
+            category: sanitizeInput(form.category),
+            description: sanitizeInput(form.description),
+        };
+
+        if (
+            sanitized.title !== form.title ||
+            sanitized.location !== form.location ||
+            sanitized.category !== form.category ||
+            sanitized.description !== form.description
+        ) {
+            setError("Invalid input detected.");
+            setLoading(false);
+            return;
+        }
+
+        const response = await fetch("/api/events/create", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-user-id": user?.id || "",
+            },
+            body: JSON.stringify({
+                ...sanitized,
                 status: "approved",
                 created_by: user?.id,
                 club_id: eventClubId,
-            },
-        ]);
+            }),
+        });
 
-        if (error) {
-            setError(error.message);
+        if (!response.ok) {
+            const { error } = await response.json();
+            setError(error);
         } else {
             router.push("/");
         }
@@ -119,8 +147,6 @@ export default function CreateEventPage() {
             </div>
         );
     }
-
-    console.log("user", user);
 
     return (
         <div className="max-w-xl mx-auto mt-10 p-6 bg-white rounded shadow">

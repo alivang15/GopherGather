@@ -32,7 +32,7 @@ const CAMPUS_SESSION_CONFIG = {
   VALIDATION_INTERVAL: 30 * 60 * 1000, // 30 minutes
 };
 
-const isBrowser = typeof window !== "undefined";
+const isDev = process.env.NODE_ENV !== 'production';
 
 const resetCooldowns = new Map<string, number>();
 
@@ -47,25 +47,25 @@ const RESET_MAX_PER_DAY = Number(process.env.NEXT_PUBLIC_RESET_MAX_PER_DAY ?? 5)
 function getLastResetTs(email: string): number {
   const mem = resetCooldowns.get(email);
   if (mem) return mem;
-  if (!isBrowser) return 0;
+  if (!isDev) return 0;
   const v = window.localStorage.getItem(`reset:last:${email}`);
   return v ? Number(v) : 0;
 }
 function setLastResetTs(email: string, ts: number) {
   resetCooldowns.set(email, ts);
-  if (isBrowser) window.localStorage.setItem(`reset:last:${email}`, String(ts));
+  if (isDev) window.localStorage.setItem(`reset:last:${email}`, String(ts));
 }
 function dayKey(email: string) {
   const day = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
   return `reset:count:${email}:${day}`;
 }
 function getDailyCount(email: string) {
-  if (!isBrowser) return 0;
+  if (!isDev) return 0;
   const v = window.localStorage.getItem(dayKey(email));
   return v ? Number(v) : 0;
 }
 function incDailyCount(email: string) {
-  if (!isBrowser) return 0;
+  if (!isDev) return 0;
   const key = dayKey(email);
   const next = getDailyCount(email) + 1;
   window.localStorage.setItem(key, String(next));
@@ -93,12 +93,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const sessionExpiration = localStorage.getItem("sessionExpiration");
         const rememberMe = localStorage.getItem("rememberMe") === "true";
         const sessionType = localStorage.getItem("sessionType");
-        console.log("🔍 Checking stored session:", { rememberMe, sessionType, sessionExpiration });
+        if (isDev) {
+          console.log("🔍 Checking stored session:", { rememberMe, sessionType, sessionExpiration });
+        }
 
         if (sessionExpiration) {
           const expirationDate = new Date(sessionExpiration);
           if (new Date() > expirationDate) {
-            console.log("⏰ Session expired, signing out...");
+            if (isDev) {
+              console.log("⏰ Session expired, signing out...");
+            }
             await supabase.auth.signOut();
             localStorage.removeItem("rememberMe");
             localStorage.removeItem("sessionExpiration");
@@ -110,7 +114,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
-          console.error("❌ Session error:", error);
+            if (isDev) {
+              console.log("⏰ Session expired, signing out...");
+            }
           setLoading(false);
           return;
         }
@@ -155,7 +161,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const validationInterval = setInterval(() => {
       const sessionExpiration = localStorage.getItem("sessionExpiration");
       if (sessionExpiration && new Date() > new Date(sessionExpiration)) {
-        console.log("⏰ Session expired during validation, signing out...");
+        if (isDev) {
+          console.log("⏰ Session expired during validation, signing out...");
+        }
         // signOut is stable; calling it is fine
         supabase.auth.signOut().catch(() => {});
       }
@@ -173,7 +181,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
-    console.log("🔄 Campus sign in:", email, rememberMe ? "(14-day session)" : "(3-day session)");
+    if (isDev) {
+      console.log("🔄 Campus sign in:", email, rememberMe ? "(14-day session)" : "(3-day session)");
+    }
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -186,7 +196,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (data.user) {
-      console.log("✅ User signed in successfully");
+      if (isDev) {
+        console.log("✅ User signed in successfully");
+      }
       setUser(data.user);
 
       // Set campus-appropriate session duration
@@ -200,16 +212,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (rememberMe) {
         localStorage.setItem("rememberMe", "true");
         localStorage.setItem("sessionType", "campus-extended");
-        console.log("💾 14-day campus session established (perfect for bi-weekly events)");
+        if (isDev) {
+          console.log("💾 14-day campus session established (perfect for bi-weekly events)");
+        }
       } else {
         localStorage.setItem("sessionType", "campus-standard");
-        console.log("💾 3-day campus session established");
+        if (isDev) {
+          console.log("💾 3-day campus session established");
+        }
       }
     }
   };
 
   const signUp = async (email: string, password: string) => {
-    console.log("🔄 Attempting sign up for:", email);
+    if (isDev) {
+      console.log("🔄 Attempting sign up for:", email);
+    }
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -223,11 +241,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error;
     }
 
-    console.log("✅ Sign up successful - check email for verification");
+    if (isDev) {
+      console.log("✅ Sign up successful - check email for verification");
+    }
   };
 
   const signOut = async () => {
-    console.log("🔄 Signing out...");
+    if (isDev) {
+      console.log("🔄 Signing out...");
+    }
     const { error } = await supabase.auth.signOut();
 
     if (error) {
@@ -240,11 +262,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("sessionExpiration");
     localStorage.removeItem("sessionType");
     setUser(null);
-    console.log("✅ Signed out successfully");
+    if (isDev) {
+      console.log("✅ Signed out successfully");
+    }
   };
 
   const resetPassword = async (email: string) => {
-    console.log("🔄 Attempting password reset for:", email);
+    if (isDev) {
+      console.log("🔄 Attempting password reset for:", email);
+    }
 
     // daily cap
     const usedToday = getDailyCount(email);
@@ -273,7 +299,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     incDailyCount(email);
-    console.log("✅ Password reset email sent");
+    if (isDev) {
+      console.log("✅ Password reset email sent");
+    }
   };
 
   const value = {

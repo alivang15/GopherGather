@@ -45,10 +45,12 @@ export default function NavigationBar() {
 
   // Force re-render when user state changes
   useEffect(() => {
-    if (user) {
-      console.log('✅ User signed in:', user.email);
-    } else {
-      console.log('❌ User signed out');
+    if (process.env.NODE_ENV !== 'production') {
+      if (user) {
+        console.log('✅ User signed in:', user.email);
+      } else {
+        console.log('❌ User signed out');
+      }
     }
   }, [user]);
 

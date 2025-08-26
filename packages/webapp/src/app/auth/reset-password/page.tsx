@@ -43,7 +43,6 @@ export default function ResetPasswordPage() {
           
           if (isPasswordReset) {
             setHasValidSession(true);
-            console.log('✅ Valid password reset session found');
           } else {
             setError('Invalid reset session. Please request a new password reset.');
           }
@@ -55,9 +54,6 @@ export default function ResetPasswordPage() {
           const type = hashParams.get('type');
           
           if (accessToken && refreshToken && type === 'recovery') {
-            // This is a valid reset link with tokens in the URL hash
-            console.log('✅ Valid reset tokens found in URL hash');
-            
             // Set the session using the tokens
             const { data: { session: newSession }, error: setSessionError } = await supabase.auth.setSession({
               access_token: accessToken,
@@ -69,7 +65,6 @@ export default function ResetPasswordPage() {
               setError('Invalid or expired reset link. Please request a new password reset.');
             } else if (newSession) {
               setHasValidSession(true);
-              console.log('✅ Password reset session established');
               
               // Clean up the URL hash
               window.history.replaceState({}, document.title, window.location.pathname);
@@ -125,7 +120,7 @@ export default function ResetPasswordPage() {
         throw error;
       }
 
-      // ✅ IMPORTANT: Sign out the user after password reset
+      // IMPORTANT: Sign out the user after password reset
       // This prevents automatic sign-in with the new password
       await supabase.auth.signOut();
       

@@ -42,6 +42,21 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    const allowedTypes = ["image/png", "image/jpg"];
+    const maxSize = 2 * 1024 * 1024; // 2MB
+
+    if (!allowedTypes.includes(file.type)) {
+      alert("Only PNG and JPG image files are allowed.");
+      e.target.value = "";
+      return;
+    }
+
+    if (file.size > maxSize) {
+      alert("Image file size must be 2MB or less.");
+      e.target.value = "";
+      return;
+    }
+
     setAvatarUploading(true);
     const fileExt = file.name.split('.').pop() || 'jpg';
 

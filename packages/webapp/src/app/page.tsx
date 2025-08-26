@@ -20,7 +20,7 @@ async function getEvents() {
       });
 
       // dev-only: check whether env is present (don't log secrets in prod)
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV !== 'production') {
         console.log('NEXT_PUBLIC_SUPABASE_URL present?', !!process.env.NEXT_PUBLIC_SUPABASE_URL);
         console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY present?', !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
       }

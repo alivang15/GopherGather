@@ -51,7 +51,6 @@ export default function EventsWithFilters({ allEvents }: EventsWithFiltersProps)
 
   // Handle category change
   const handleCategoryChange = (category: string) => {
-    console.log('Category changed to:', category);
     setSelectedCategory(category);
   };
 
@@ -142,12 +141,14 @@ export default function EventsWithFilters({ allEvents }: EventsWithFiltersProps)
 
   const { currentEvents, upcomingEvents, pastEvents } = categorizeEvents(filteredEvents);
 
-  console.log('Event categorization:', {
-    filtered: filteredEvents.length,
-    current: currentEvents.length,
-    upcoming: upcomingEvents.length,
-    past: pastEvents.length
-  });
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Event categorization:', {
+      filtered: filteredEvents.length,
+      current: currentEvents.length,
+      upcoming: upcomingEvents.length,
+      past: pastEvents.length
+    });
+  }
 
   // Function to load more past events
   const loadMorePastEvents = () => {

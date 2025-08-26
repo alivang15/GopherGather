@@ -32,6 +32,29 @@ export default function VibeCheckPanel({ eventId, eventTitle }: { eventId: strin
   const [comment, setComment] = useState("");
   const [userName, setUserName] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Determine admin/club_admin from auth metadata; fallback to users table
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    const metaType = (user.user_metadata?.user_type || user.user_metadata?.role) as string | undefined;
+    if (metaType) {
+      setIsAdmin(metaType === "admin" || metaType === "club_admin");
+      return;
+    }
+    // Fallback: read your profile row to get user_type
+    supabase
+      .from("users")
+      .select("user_type")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        setIsAdmin(data?.user_type === "admin" || data?.user_type === "club_admin");
+      });
+  }, [user?.id]);
 
   useEffect(() => {
     if (user) {
@@ -78,13 +101,16 @@ export default function VibeCheckPanel({ eventId, eventTitle }: { eventId: strin
 
   const deleteComment = async (checkId: string) => {
     if (!user) return;
-    if (!confirm("Delete your comment for this vibe check?")) return;
+    const prompt = isAdmin ? "Delete this comment? (as an admin)" : "Delete your comment for this vibe check?";
+    if (!confirm(prompt)) return;
+
     setDeletingId(checkId);
-    const { error } = await supabase
-      .from("vibe_checks")
-      .update({ comment: null })
-      .eq("id", checkId)
-      .eq("user_email", user.email);
+    // Admin may moderate any comment; regular users can only delete their own
+    let query = supabase.from("vibe_checks").update({ comment: null }).eq("id", checkId);
+    if (!isAdmin) {
+      query = query.eq("user_email", user.email!);
+    }
+    const { error } = await query;
     if (!error) setVibeChecks(prev => prev.filter(vc => vc.id !== checkId));
     setDeletingId(null);
   };
@@ -115,20 +141,20 @@ export default function VibeCheckPanel({ eventId, eventTitle }: { eventId: strin
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <header>
-        <h1 className="text-2xl font-bold text-purple-600">✨ Vibe Check</h1>
+        <h1 className="text-2xl font-bold to-black">Vibe Check</h1>
         {eventTitle && <p className="text-sm text-gray-600">{eventTitle}</p>}
       </header>
 
       {/* Stats — Average + Distribution (visible when there’s any data) */}
       {vibeChecks.length > 0 && (
-        <div className="p-4 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
+        <div className="p-4 rounded-lg bg-gradient-to-r from-[#f3e6e8] to-white">
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{getAverageVibe()}/5</div>
+              <div className="text-2xl font-bold text-[#7a0019]">{getAverageVibe()}/5</div>
               <div className="text-sm text-gray-600">Average Vibe</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{vibeChecks.length}</div>
+              <div className="text-2xl font-bold text-[#7a0019]">{vibeChecks.length}</div>
               <div className="text-sm text-gray-600">Total Checks</div>
             </div>
           </div>
@@ -140,7 +166,7 @@ export default function VibeCheckPanel({ eventId, eventTitle }: { eventId: strin
                   <span className="text-lg">{v.emoji}</span>
                   <span className="text-sm text-gray-700 w-16">{v.label}</span>
                   <div className="flex-1 bg-gray-200 rounded-full h-2">
-                    <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${pct}%` }} />
+                    <div className="bg-[#7a0019] h-2 rounded-full" style={{ width: `${pct}%` }} />
                   </div>
                   <span className="text-sm text-gray-600 w-8 text-right">{v.count}</span>
                 </div>
@@ -164,13 +190,14 @@ export default function VibeCheckPanel({ eventId, eventTitle }: { eventId: strin
                 <button
                   key={v.value}
                   onClick={() => setSelectedVibe(v.value)}
-                  className={`p-3 rounded border ${selectedVibe === v.value ? "border-purple-500 bg-purple-50" : "border-gray-300 bg-white"}`}
+                  className={`p-3 rounded border ${selectedVibe === v.value ? "border-[#7a0019] bg-[#f3e6e8]" : "border-gray-300 bg-white"}`}
                 >
                   <div className="text-2xl text-center">{v.emoji}</div>
                   <div className="text-xs text-center">{v.label}</div>
                 </button>
               ))}
             </div>
+
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
@@ -182,7 +209,7 @@ export default function VibeCheckPanel({ eventId, eventTitle }: { eventId: strin
             <button
               onClick={submit}
               disabled={!selectedVibe || !userName.trim() || submitting}
-              className="w-full bg-purple-600 text-white py-2 rounded disabled:opacity-50"
+              className="w-full bg-[#7a0019] hover:bg-red-800 text-white py-2 rounded disabled:opacity-50"
             >
               {submitting ? "Submitting..." : "Submit Vibe Check"}
             </button>
@@ -204,13 +231,13 @@ export default function VibeCheckPanel({ eventId, eventTitle }: { eventId: strin
                         <div className="font-medium text-gray-900">{vc.user_name}</div>
                         <div className="text-gray-500 text-xs">{fmt(vc.created_at)}</div>
                       </div>
-                      {user && vc.user_email === user.email && (
+                      {user && (vc.user_email === user.email || isAdmin) && (
                         <button
                           onClick={() => deleteComment(vc.id)}
                           disabled={deletingId === vc.id}
                           className="text-xs text-red-600 hover:underline disabled:opacity-50"
                         >
-                          {deletingId === vc.id ? "Deleting..." : "Delete"}
+                          {deletingId === vc.id ? "Deleting..." : vc.user_email === user.email ? "Delete" : "Delete (admin)"}
                         </button>
                       )}
                     </div>

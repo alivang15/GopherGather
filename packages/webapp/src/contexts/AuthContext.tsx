@@ -329,3 +329,9 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+export function useUserType() {
+  const ctx = useContext(AuthContext);
+  // adapt to your actual metadata key (role / user_type / type)
+  return ctx?.user?.user_metadata?.role ?? ctx?.user?.user_metadata?.user_type ?? null;
+}

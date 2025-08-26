@@ -21,7 +21,7 @@ A modern event discovery platform for the University of Minnesota community.
 
 1. Clone the repository
    ```bash
-   git clone https://github.com/alivang15/GopherGather
+   git clone https://github.com/alivang15/GopherGather.git
    cd GopherGather
    ```
 
